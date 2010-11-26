@@ -74,13 +74,22 @@ class 	hvac_interface:
 		self.hvac_id 			= 0 
 		self.hvac_ts 			= 1
 		self.hvac_dev_name 		= 2
-		self.hvac_temperature 	= 3
+		self.hvac_temperature		= 3
 		self.hvac_humidity 		= 4
-		self.hvac_setpoint_cool = 5
-		self.hvac_setpoint_heat = 6
-		self.hvac_current_mode 	= 7
+		self.hvac_setpoint_cool		= 5
+		self.hvac_setpoint_heat		= 6
+		self.hvac_current_mode 		= 7
 		self.hvac_fan_mode		= 8
 		self.hvac_raw_data		= None
+		self.hvac_mins_ac		= 1
+		self.hvac_mins_ac_ts		= 2
+		self.hvac_mins_ac_raw_data	= None
+		self.hvac_mins_fan		= 1
+		self.hvac_mins_fan_ts		= 2
+		self.hvac_mins_fan_raw_data	= None
+		self.hvac_mins_heat		= 1
+		self.hvac_mins_heat_ts		= 2
+		self.hvac_mins_heat_raw_data	= None
 		self.dbFileName = sql_db_file
 		
 	def		retrieve_query_from_sqlite ( self, query):
@@ -98,8 +107,16 @@ class 	hvac_interface:
 		
 		cur.execute(u"""select id, datetime(ts,'localtime'), dev_name, temperature, humidity, setpoint_cool, setpoint_heat, current_mode, fan_mode from device_history_hvac where dev_name = '%s' and date(ts, 'localtime') = date(?) order by ts""" % thermo_name, (unicode(inDate),))
 		self.hvac_raw_data = cur.fetchall()
-		#cur.execute(u"select distinct(dev_name) from device_history_basic where date(ts, 'localtime') = date(?) order by dev_name", (unicode(inDate),))
-		
+
+		cur.execute(u"""select var_name, var_value, datetime(ts, 'localtime') from variable_history where var_name like 'AC_%' and date(ts, 'localtime') = date(?) order by ts desc""", (unicode(inDate),))
+		self.hvac_mins_ac_raw_data = cur.fetchall()
+
+		cur.execute(u"""select var_name, var_value, datetime(ts, 'localtime') from variable_history where var_name like 'Fan_%' and date(ts, 'localtime') = date(?) order by ts desc""", (unicode(inDate),))
+		self.hvac_mins_fan_raw_data = cur.fetchall()
+
+		cur.execute(u"""select var_name, var_value, datetime(ts, 'localtime') from variable_history where var_name like 'Heating_%' and date(ts, 'localtime') = date(?) order by ts desc""", (unicode(inDate),))
+		self.hvac_mins_heat_raw_data = cur.fetchall()
+
 	def		retrieve_thermo_names ( self, inDate ):
 		con = sqlite3.connect(self.dbFileName, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 		con.isolation_level = None
@@ -124,6 +141,36 @@ class 	hvac_interface:
 		thermo = []
 		for x in self.hvac_raw_data:
 			thermo.append ( x[self.hvac_setpoint_cool] )
+		return thermo
+	
+	def		return_mins_ac_cycle_readings ( self ):
+		thermo = []
+		for x in self.hvac_mins_ac_raw_data:
+			if x[0] == "AC_Started":
+				thermo.append ( [x[self.hvac_mins_ac_ts], int(105)] )
+			elif x[0] == "AC_dailymins":
+				thermo.append ( [x[self.hvac_mins_ac_ts], int(104)] )
+
+		return thermo
+	
+	def		return_mins_fan_cycle_readings ( self ):
+		thermo = []
+		for x in self.hvac_mins_fan_raw_data:
+			if x[0] == "Fan_Started":
+				thermo.append ( [x[self.hvac_mins_fan_ts], int(103)] )
+			elif x[0] == "Fan_dailymins":
+				thermo.append ( [x[self.hvac_mins_fan_ts], int(102)] )
+
+		return thermo
+	
+	def		return_mins_heat_cycle_readings ( self ):
+		thermo = []
+		for x in self.hvac_mins_heat_raw_data:
+			if x[0] == "Heating_Started":
+				thermo.append ( [x[self.hvac_mins_heat_ts], int(101)] )
+			elif x[0] == "Heating_dailymins":
+				thermo.append ( [x[self.hvac_mins_heat_ts], int(100)] )
+
 		return thermo
 	
 	def 	return_timestrings ( self ):
@@ -158,6 +205,49 @@ def	create_graphs ( html, hvac_sql_interface, thermostat_name, inDate = datetime
 		return html
 
 	html.append ('<div id="graph-%s">Loading graph...</div>' % thermostat_name)
+
+	mins_ac_data = hvac_data.return_mins_ac_cycle_readings()
+	mins_ac_total = 0
+	for data in hvac_data.hvac_mins_ac_raw_data:
+		if data[0] == "AC_dailymins":
+			mins_ac_total = data[hvac_data.hvac_mins_ac]
+			break
+	y = 0
+	mins_ac_cycles = 0
+	for data in mins_ac_data:
+		if y == 105 and data[1] != y:
+			mins_ac_cycles += 1
+		y = data[1]
+
+	mins_fan_data = hvac_data.return_mins_fan_cycle_readings()
+	mins_fan_total = 0
+	for data in hvac_data.hvac_mins_fan_raw_data:
+		if data[0] == "Fan_dailymins":
+			mins_fan_total = data[hvac_data.hvac_mins_fan]
+			break
+	y = 0
+	mins_fan_cycles = 0
+	for data in mins_fan_data:
+		if y == 103 and data[1] != y:
+			mins_fan_cycles += 1
+		y = data[1]
+
+	mins_heat_data = hvac_data.return_mins_heat_cycle_readings()
+	mins_heat_total = 0
+	for data in hvac_data.hvac_mins_heat_raw_data:
+		if data[0] == "Heating_dailymins":
+			mins_heat_total = data[hvac_data.hvac_mins_heat]
+			break
+	y = 0
+	mins_heat_cycles = 0
+	for data in mins_heat_data:
+		if y == 103 and data[1] != y:
+			mins_heat_cycles += 1
+		y = data[1]
+
+	html.append ('<div align="center">Compressor totals: %s mins, %s cycles -- Fan totals: %s mins, %s cycles -- Furnace totals: %s mins, %s cycles</div>' % (mins_ac_total, mins_ac_cycles, mins_fan_total, mins_fan_cycles, mins_heat_total, mins_heat_cycles))
+	html.append ('<HR>')
+
 	html.append ('''<a href='#' onClick='toggle_it("table-%s")'">Show/Hide Thermostat Details</a><br>'''% thermostat_name.replace (" ", "") )
 	html.append ('<table id="table-%s" border=1 style="display:none;">' % thermostat_name.replace(" ", ""))
 	html.append ("<caption> %s Temperature Chart</caption>" % thermostat_name)
@@ -182,6 +272,88 @@ def	create_graphs ( html, hvac_sql_interface, thermostat_name, inDate = datetime
 		html.append ('</tr>')
 
 	html.append ('</tbody> </table>')
+
+	html.append ('''<a href='#' onClick='toggle_it("table-mins-ac")'">Show/Hide Compressor Cycles</a><br>''')
+	html.append ('<table id="table-mins-ac" border=1 style="display:none;">')
+	html.append ("<caption> %s Compressor Cycle Chart</caption>" % thermostat_name)
+	html.append ('<thead>')
+	html.append ('<tr>')
+	html.append ('<th scope="col">Time</th>')
+	html.append ('<th scope="col">Mode</th>')
+	html.append ('</tr></thead>')
+	html.append ('<tbody>')
+	mins_ac_matrix = []
+	for data in mins_ac_data:
+		stored_datetime = data[0]
+		x = stored_datetime.split(" ")[1][0:-3].replace(":",".")
+		y = data[1]
+		if y == 105:
+			onoff = "On"
+		else:
+			onoff = "Off"
+
+		mins_ac_matrix.append ( [float(x), int(y)] )
+
+		html.append ('<tr>')
+		html.append ('<TD scope="row">%s</TD><TD>%s</TD>' % (data[0], onoff))
+		html.append ('</tr>')
+
+	html.append ('</tbody> </table>')
+
+	html.append ('''<a href='#' onClick='toggle_it("table-mins-fan")'">Show/Hide Fan Cycles</a><br>''')
+	html.append ('<table id="table-mins-fan" border=1 style="display:none;">')
+	html.append ("<caption> %s Fan Cycle Chart</caption>" % thermostat_name)
+	html.append ('<thead>')
+	html.append ('<tr>')
+	html.append ('<th scope="col">Time</th>')
+	html.append ('<th scope="col">Mode</th>')
+	html.append ('</tr></thead>')
+	html.append ('<tbody>')
+	mins_fan_matrix = []
+	for data in mins_fan_data:
+		stored_datetime = data[0]
+		x = stored_datetime.split(" ")[1][0:-3].replace(":",".")
+		y = data[1]
+		if y == 103:
+			onoff = "On"
+		else:
+			onoff = "Off"
+
+		mins_fan_matrix.append ( [float(x), int(y)] )
+
+		html.append ('<tr>')
+		html.append ('<TD scope="row">%s</TD><TD>%s</TD>' % (data[0], onoff))
+		html.append ('</tr>')
+
+	html.append ('</tbody> </table>')
+
+	html.append ('''<a href='#' onClick='toggle_it("table-mins-heat")'">Show/Hide Furnace Cycles</a><br>''')
+	html.append ('<table id="table-mins-heat" border=1 style="display:none;">')
+	html.append ("<caption> %s Furnace Cycle Chart</caption>" % thermostat_name)
+	html.append ('<thead>')
+	html.append ('<tr>')
+	html.append ('<th scope="col">Time</th>')
+	html.append ('<th scope="col">Mode</th>')
+	html.append ('</tr></thead>')
+	html.append ('<tbody>')
+	mins_heat_matrix = []
+	for data in mins_heat_data:
+		stored_datetime = data[0]
+		x = stored_datetime.split(" ")[1][0:-3].replace(":",".")
+		y = data[1]
+		if y == 101:
+			onoff = "On"
+		else:
+			onoff = "Off"
+
+		mins_heat_matrix.append ( [float(x), int(y)] )
+
+		html.append ('<tr>')
+		html.append ('<TD scope="row">%s</TD><TD>%s</TD>' % (data[0], onoff))
+		html.append ('</tr>')
+
+	html.append ('</tbody> </table>')
+
 	html.append ('<HR>')
 	html.append ('''<script type="text/javascript" src="js/jscharts.js"></script>''')
 	html.append ('<script type="text/javascript">')
@@ -189,6 +361,12 @@ def	create_graphs ( html, hvac_sql_interface, thermostat_name, inDate = datetime
 	html.append ('\nmyChart.setDataArray(%s,"thermo" );\n' % thermo_matrix)
 	html.append ('\nmyChart.setDataArray(%s,"ac" );\n' % cooling_matrix)
 	html.append ('\nmyChart.setDataArray(%s,"heat" );\n' % heating_matrix)
+	if len(mins_ac_matrix) != 0:
+		html.append ('\nmyChart.setDataArray(%s,"ac_cycles" );\n' % mins_ac_matrix)
+	if len(mins_fan_matrix) != 0:
+		html.append ('\nmyChart.setDataArray(%s,"fan_cycles" );\n' % mins_fan_matrix)
+	if len(mins_heat_matrix) != 0:
+		html.append ('\nmyChart.setDataArray(%s,"heat_cycles" );\n' % mins_heat_matrix)
 
 	for (x, y) in thermo_matrix:
 		html.append ('\nmyChart.setTooltip( [%f, "Time: %s   Room Temp: %s", "thermo"] );\n' % (x, x, y) )
@@ -199,9 +377,36 @@ def	create_graphs ( html, hvac_sql_interface, thermostat_name, inDate = datetime
 	for (x, y) in cooling_matrix:
 		html.append ('\nmyChart.setTooltip( [%f, "(AC) Time: %s   AC Temp: %s", "ac"] );\n' % (x, x, y) )
 
+	if len(mins_ac_matrix) != 0:
+		for (x, y) in mins_ac_matrix:
+			if y == 105:
+				onoff = "On"
+			else:
+				onoff = "Off"
+
+			html.append ('\nmyChart.setTooltip( [%f, "(AC %s) Time: %s", "ac_cycles"] );\n' % (x, onoff, x) )
+
+	if len(mins_fan_matrix) != 0:
+		for (x, y) in mins_fan_matrix:
+			if y == 103:
+				onoff = "On"
+			else:
+				onoff = "Off"
+
+			html.append ('\nmyChart.setTooltip( [%f, "(Fan %s) Time: %s", "fan_cycles"] );\n' % (x, onoff, x) )
+
+	if len(mins_heat_matrix) != 0:
+		for (x, y) in mins_heat_matrix:
+			if y == 101:
+				onoff = "On"
+			else:
+				onoff = "Off"
+
+			html.append ('\nmyChart.setTooltip( [%f, "(Heat %s) Time: %s", "heat_cycles"] );\n' % (x, onoff, x) )
+
 #	html.append ('myChart.setAxisValuesNumberY(11);')
 	html.append ('myChart.setIntervalStartY(50);')
-	html.append ('myChart.setIntervalEndY(95);')
+	html.append ('myChart.setIntervalEndY(106);')
 	html.append ("myChart.setAxisWidth ( 1 );")
 	html.append ('myChart.setIntervalStartX(00);')
 	html.append ('myChart.setIntervalEndX(24);')
@@ -211,14 +416,17 @@ def	create_graphs ( html, hvac_sql_interface, thermostat_name, inDate = datetime
 	html.append ("myChart.setTitleColor('#454545');")
 	html.append ("myChart.setAxisValuesNumberX ( 1);")
 	html.append ("myChart.setAxisValuesColor('#454545');")
+	html.append ("myChart.setLineColor('#000000', 'thermo');")
 	html.append ("myChart.setLineColor('#87cefa', 'ac');")
 	html.append ("myChart.setLineColor('#ff0000', 'heat');")
-	html.append ("myChart.setLineColor('#000000', 'thermo');")
+	html.append ("myChart.setLineColor('#87cefa', 'ac_cycles');")
+	html.append ("myChart.setLineColor('#000000', 'fan_cycles');")
+	html.append ("myChart.setLineColor('#ff0000', 'heat_cycles');")
 	html.append ('myChart.setTitle ("%s Thermostat Historical Readings");' % thermostat_name)
 
-	html.append ("myChart.setBackgroundImage('images/chart_bg.jpg');")
+#	html.append ("myChart.setBackgroundImage('/hvac/chart_bg.jpg');")
 
-	html.append ('myChart.setSize(900, 700);')
+	html.append ('myChart.setSize(1100, 600);')
 	html.append ('myChart.draw();')
 	html.append ('</script>')
 
@@ -355,18 +563,6 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 
 #
 #		Version History - 
-#		1.50	- Added External CSS Support
-#		1.35	- Table Header revision
-#				- Fixed bug with loading a specific day
-#				- Added Ability to restrict to particular event tags (eg. iTunes, Application, Web Server)
-#
-#		1.30	- Table Header revision
-#				- Added Custom color support
-#				
-#		1.21	- Fixed issues with Sort / Reverse with Python v2.4x
-#		1.20	- Added Select Form features
-#				- Added Color coding for Error messages
-#				- Now displayed in newest to oldest order
-
+#		2.00	- Show compressor, furnace, and fan cycles/totals
 #		1.00	- Public release as Indigo Plugin
 #
