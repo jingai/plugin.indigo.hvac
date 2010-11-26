@@ -1,33 +1,57 @@
-body { 
-background-color: #FFFFF0; 
-font-family: Arial, Verdana, sans-serif; 
-font-size: 14px; 
-color: #00008B;
+body {
+	background-color: #FFFFF0;
+	font-family: Arial, Verdana, sans-serif;
+	font-size: 14px;
+	color: #00008B;
 }
 
-a { font-family: Arial, Verdana, sans-serif; font-size: 12px; color: #483D8B; text-decoration: underline}
+a {
+	font-family: Arial, Verdana, sans-serif;
+	font-size: 12px;
+	color: #483D8B;
+	text-decoration: underline;
+}
 
-a:hover { font-family: Arial, Verdana, sans-serif; font-size: 12px; color: #A52A2A; background-color: #FAEBD7}
+a:hover {
+	font-family: Arial, Verdana, sans-serif;
+	font-size: 12px;
+	color: #A52A2A;
+	background-color: #FAEBD7;
+}
 
-h1 { font-family: Arial, Verdana, sans-serif; font-size: 32px; color: #A52A2A }
-h2 { font-family: Arial, Verdana, sans-serif; font-size: 24px; color: #A52A2A }
+h1 {
+	font-family: Arial, Verdana, sans-serif;
+	font-size: 32px;
+	color: #A52A2A;
+}
 
-hr{ color:brown; background-color:tan; width:90%; height:2px; } 
+h2 {
+	font-family: Arial, Verdana, sans-serif;
+	font-size: 24px;
+	color: #A52A2A;
+}
+
+hr {
+	color: brown;
+	background-color: tan;
+	width: 90%;
+	height: 2px;
+} 
 
 table {
-font-family: Arial, Verdana, sans-serif;
-font-size: 14px;
-color: Black;
-margin-top: 0px;
-margin-right: 0px;
-margin-bottom: 0px;
-margin-left: 0px;
-padding-top: 0px;
-padding-right: 0px;
-padding-bottom: 0px;
-padding-left: 0px;
-border-collapse: collapse;
-table-layout: fixed;
+	font-family: Arial, Verdana, sans-serif;
+	font-size: 14px;
+	color: Black;
+	margin-top: 0px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+	padding-top: 0px;
+	padding-right: 0px;
+	padding-bottom: 0px;
+	padding-left: 0px;
+	border-collapse: collapse;
+	table-layout: fixed;
 }
 
 tr.rowodd {
@@ -37,212 +61,3 @@ tr.rowodd {
 tr.roweven {
 	background-color: #FFFFCC;
 }
-
-
-.sortcol {
-	cursor: pointer;
-	padding-right: 20px;
-	background-repeat: no-repeat;
-	background-position: right center;
-}
-.sortasc {
-	background-image: url(up.gif);
-}
-.sortdesc {
-	background-image: url(down.gif);
-}
-.nosort {
-	cursor: default;}
-	
-	
-.DateTimeStamp {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Black;
-font-weight: Normal;
-} 
-
-.Application {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Black;
-font-weight: Normal;
-} 
-
-.TimeDateAction {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Black;
-font-weight: Normal;
-} 
-
-.Sentoffline {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Red;
-font-weight: Bold;
-} 
-
-.SentX10 {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Black;
-font-weight: Normal;
-} 
-
-.SentINSTEON {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Black;
-font-weight: Normal;
-} 
-
-
-.ReceivedX10 {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Black;
-font-weight: Normal;
-} 
-
-.ReceivedRF {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Black;
-font-weight: Normal;
-} 
-
-.ReceivedINSTEON {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Black;
-font-weight: Normal;
-} 
-
-.info {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Black;
-font-weight: Normal;
-} 
-
-.Sprinkler {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Black;
-font-weight: Normal;
-} 
-
-.Error {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Red;
-font-weight: Bold;
-} 
-
-.Errorclient {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Red;
-font-weight: Bold;
-} 
-
-.PowerFailure {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Red;
-font-weight: Bold;
-} 
-
-.Debug {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: #FF8040;
-font-weight: Normal;
-} 
-
-.Debugclient {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: #FF8040;
-font-weight: Normal;
-} 
-
-.WebServer {
-font-family: Arial, Verdana, sans-serif;
-font-size: 13px;
-color: Black;
-font-weight: Light;
-} 
-
-.TimeDateAction {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Blue;
-font-weight: Normal;
-} 
-
-.TriggerAction {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Blue;
-font-weight: Normal;
-} 
-
-.ActionGroup {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Blue;
-font-weight: Normal;
-} 
-
-.Updated {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Blue;
-font-weight: Normal;
-} 
-
-.Script {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Blue;
-font-weight: Normal;
-} 
-
-.info {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Blue;
-font-weight: Normal;
-} 
-
-.EmailDeleted {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Blue;
-font-weight: Normal;
-} 
-
-.EmailScanned {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Blue;
-font-weight: Normal;
-} 
-
-.EmailSent {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Blue;
-font-weight: Normal;
-} 
-
-.Security {
-font-family: Arial, Verdana, sans-serif;
-font-size: 12px;
-color: Purple;
-font-weight: Normal;
-} 
-
-
