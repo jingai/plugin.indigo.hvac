@@ -1,0 +1,9 @@
+* style sheet for raw data table (pretty it up)
+* add graph color legend
+* check box(es) to show duplicate/bogus data points
+* add comments to the code
+* infer compressor/heat stage from temperature/setpoint differential
+* infer dehumidify cycle temperature and humidity readings
+* calculate electricity costs
+- send emails at user-specified intervals
+* add date-range selector
