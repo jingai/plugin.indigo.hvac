@@ -6,3 +6,8 @@
 
 	* Show compressor, furnace, and fan cycles/totals
 
+2.0.1  2010-08-03  Jonathan Lane <jingai@floatingpenguins.com>
+
+	* Show average compressor/heater usage over specified time
+	* Show filter runtime and date last changed
+
