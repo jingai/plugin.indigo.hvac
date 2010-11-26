@@ -1,28 +1,5 @@
 #!python
 
-####################
-# Copyright (c) 2009, Benjamin Schollnick. All rights reserved.
-# http://www.schollnick.net/wordpress
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-#
-# IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-#
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-####################
-#
-# Version History:
-# 2.01 - Show average compressor usage over specified time
-# 2.00 - Show compressor, furnace, and fan cycles/totals
-# 1.00 - Public release as Indigo Plugin
-
 import sqlite3
 import datetime
 import ConfigParser
@@ -516,7 +493,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	html.append('</table>')
 	# Raw data -- END
 
-	html.append('''<script type="text/javascript" src="js/jscharts.js"></script>''')
+	html.append('''<script type="text/javascript" src="js/jscharts/jscharts.js"></script>''')
 
 	# Humidity graph -- BEGIN
 	html.append('<script type="text/javascript">')
@@ -695,7 +672,7 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 		html_elems.append('<link rel="stylesheet" type="text/css" href="css/hvac.css">')
 		html_elems.append('<meta name="apple-mobile-web-app-capable" content="yes">')
 		html_elems.append('<meta name="viewport" content="width=320, initial-scale=0.8, maximum-scale=1.6, user-scalable=yes"/>')
-		html_elems.append('''<script type="text/javascript" src="js/jscharts.js"></script>''')
+		html_elems.append('''<script type="text/javascript" src="js/jscharts/jscharts.js"></script>''')
 		html_elems.append('''<script language="javascript">
 			function toggle_it(itemID) { 
 				// Toggle visibility between none and inline 
