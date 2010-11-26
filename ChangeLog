@@ -15,3 +15,7 @@
 
         * Split into three graphs: Humidity, Cooling, and Heating
 
+2.1.1  2010-11-14  Jonathan Lane <jingai@floatingpenguins.com>
+
+        * Fill gaps at beginning and end of day
+
