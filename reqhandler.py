@@ -34,6 +34,7 @@ from cherrypy import _cperror
 from indigopy import indigoconn as ic
 from indigopy import indigodb as idb
 from indigopy.basereqhandler import BaseRequestHandler, kTrueStr, kFalseStr, kEmptyStr, kTextPageStr, kHtmlPageStr, kXmlPageStr
+from datetime import date
 import socket
 import os
 import os.path
@@ -146,7 +147,7 @@ class hvac_interface:
 		eod = float(self.hvac_raw_data[len(self.hvac_raw_data) - 1][self.hvac_ts].split(" ")[1][0:-3].replace(":","."))
 		if (bod > 0.0):
 			self.bod_gap_fill = True
-		if (eod < 23.59):
+		if (eod < 23.55 and inDate != date.today().isoformat()):
 			self.eod_gap_fill = True
 
 		# fetch cooling data
@@ -380,7 +381,8 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	humidity_matrix, cooling_matrix, heating_matrix, thermo_matrix = [], [], [], []
 	for t, temp, hum, csp, hsp in zip(time_data, temperature_readings_data, humidity_readings_data, setpoint_cooling_data, setpoint_heating_data):
-		humidity_matrix.append([t, hum])
+		if (hum > 0 and hum <= 100):
+			humidity_matrix.append([t, hum])
 		cooling_matrix.append([t, csp])
 		heating_matrix.append([t, hsp])
 		thermo_matrix.append([t, temp])
