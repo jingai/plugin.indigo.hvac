@@ -5,6 +5,8 @@ fail() {
 	exit 1
 }
 
+cd `dirname "$0"`
+
 IWS_DIR="/Library/Application Support/Perceptive Automation/Indigo 4/IndigoWebServer/"
 SCRIPT_DIR="$IWS_DIR/../Scripts/Attachments"
 
