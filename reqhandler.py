@@ -34,7 +34,6 @@ from cherrypy import _cperror
 from indigopy import indigoconn as ic
 from indigopy import indigodb as idb
 from indigopy.basereqhandler import BaseRequestHandler, kTrueStr, kFalseStr, kEmptyStr, kTextPageStr, kHtmlPageStr, kXmlPageStr
-from datetime import date
 import socket
 import os
 import os.path
@@ -46,9 +45,20 @@ import cgi
 
 kSqlConfigFile = "/Library/Application Support/Perceptive Automation/Indigo 4/IndigoSqlClient/IndigoSqlClient.conf"
 
-# pixels
-graph_width = 1016
-graph_height = 320
+graph_width				= 1016			# pixels
+graph_height			= 320			# pixels
+graph_color_thermo		= '#4f4f4f'
+graph_color_humidity	= '#67ffca'
+graph_color_ac			= '#10109f'
+graph_color_ac_cycles	= '#0000ff'
+graph_color_heat		= '#9f1010'
+graph_color_heat_cycles	= '#ff0000'
+graph_lw_thermo			= 3				# line width in pixels
+graph_lw_humidity		= 3				# line width in pixels
+graph_lw_ac				= 2				# line width in pixels
+graph_lw_ac_cycles		= 1				# line width in pixels
+graph_lw_heat			= 2				# line width in pixels
+graph_lw_heat_cycles	= 1				# line width in pixels
 
 
 ####################
@@ -71,46 +81,53 @@ def IndigoDisconnected():
 	pass
 
 
+def normalize_timestring(ts):
+	raw_time = ts.split(" ")[1].split(":")
+	return round(float(raw_time[0]) + float(raw_time[1]) / 60.0, 2)
+
 class hvac_interface:
 	def __init__(self, sql_db_file):
-		self.hvac_id 					= 0 
-		self.hvac_ts 					= 1
-		self.hvac_dev_name 				= 2
+		self.hvac_id 							= 0 
+		self.hvac_ts 							= 1
+		self.hvac_dev_name 						= 2
 
-		self.hvac_temp					= 3
-		self.hvac_temp_yest				= 0
-		self.hvac_temp_min				= 0
-		self.hvac_temp_max				= 0
-		self.hvac_temp_avg				= 0
-		self.hvac_humidity 				= 4
-		self.hvac_humidity_yest 		= 0
-		self.hvac_humidity_min			= 0
-		self.hvac_humidity_max			= 0
-		self.hvac_humidity_avg			= 0
-		self.hvac_set_cool				= 5
-		self.hvac_set_cool_yest			= 0
-		self.hvac_set_cool_min			= 0
-		self.hvac_set_cool_max			= 0
-		self.hvac_set_heat				= 6
-		self.hvac_set_heat_yest			= 0
-		self.hvac_set_heat_min			= 0
-		self.hvac_set_heat_max			= 0
+		self.hvac_temp							= 3
+		self.hvac_temp_yest						= 0
+		self.hvac_temp_min						= 0
+		self.hvac_temp_max						= 0
+		self.hvac_temp_avg						= 0
+		self.hvac_humidity 						= 4
+		self.hvac_humidity_yest 				= 0
+		self.hvac_humidity_min					= 0
+		self.hvac_humidity_max					= 0
+		self.hvac_humidity_avg					= 0
+		self.hvac_set_cool						= 5
+		self.hvac_set_cool_yest					= 0
+		self.hvac_set_cool_min					= 0
+		self.hvac_set_cool_max					= 0
+		self.hvac_set_heat						= 6
+		self.hvac_set_heat_yest					= 0
+		self.hvac_set_heat_min					= 0
+		self.hvac_set_heat_max					= 0
 
-		self.hvac_current_mode 			= 7
-		self.hvac_fan_mode				= 8
+		self.hvac_current_mode 					= 7
+		self.hvac_fan_mode						= 8
 
-		self.hvac_raw_data				= None
-		self.hvac_mins_ac				= 1
-		self.hvac_mins_ac_ts			= 2
-		self.hvac_mins_ac_raw_data		= None
-		self.hvac_mins_heat				= 1
-		self.hvac_mins_heat_ts			= 2
-		self.hvac_mins_heat_raw_data	= None
-		self.hvac_mins_filter_total		= 0
-		self.hvac_date_filter_changed	= "never"
+		self.hvac_raw_data						= None
+		self.hvac_mins_ac						= 1
+		self.hvac_mins_ac_ts					= 2
+		self.hvac_mins_ac_raw_data				= None
+		self.hvac_mins_heat						= 1
+		self.hvac_mins_heat_ts					= 2
+		self.hvac_mins_heat_raw_data			= None
+		self.hvac_mins_filter_total				= 0
+		self.hvac_date_filter_changed			= "never"
 
-		self.bod_gap_fill				= False
-		self.eod_gap_fill				= False
+		self.bod_gap_fill						= False
+		self.eod_gap_fill						= False
+
+		self.show_duplicate_data_points			= False
+		self.min_duplicate_data_points_interval	= 1 # hours
 
 		self.dbFileName = sql_db_file
 
@@ -147,7 +164,7 @@ class hvac_interface:
 		eod = float(self.hvac_raw_data[len(self.hvac_raw_data) - 1][self.hvac_ts].split(" ")[1][0:-3].replace(":","."))
 		if (bod > 0.0):
 			self.bod_gap_fill = True
-		if (eod < 23.55 and inDate != date.today().isoformat()):
+		if (eod < 23.55 and inDate != datetime.date.today().isoformat()):
 			self.eod_gap_fill = True
 
 		# fetch cooling data
@@ -209,11 +226,12 @@ class hvac_interface:
 			thermo.append(int(self.hvac_humidity_yest))
 
 		for x in self.hvac_raw_data:
-			if self.hvac_humidity_min == 0 or x[self.hvac_humidity] < self.hvac_humidity_min:
-				self.hvac_humidity_min = x[self.hvac_humidity]
-			if x[self.hvac_humidity] > self.hvac_humidity_max:
-				self.hvac_humidity_max = x[self.hvac_humidity]
-			self.hvac_humidity_avg += x[self.hvac_humidity]
+			if (x[self.hvac_humidity] > 0 and x[self.hvac_humidity] <= 100):
+				if self.hvac_humidity_min == 0 or x[self.hvac_humidity] < self.hvac_humidity_min:
+					self.hvac_humidity_min = x[self.hvac_humidity]
+				if x[self.hvac_humidity] > self.hvac_humidity_max:
+					self.hvac_humidity_max = x[self.hvac_humidity]
+				self.hvac_humidity_avg += x[self.hvac_humidity]
 
 			thermo.append(int(x[self.hvac_humidity]))
 
@@ -295,9 +313,7 @@ class hvac_interface:
 			dates.append(0.0)
 
 		for x in self.hvac_raw_data:
-			stored_datetime = x[self.hvac_ts]
-			raw_date = stored_datetime.split(" ")[1][0:-3].replace(":", ".")
-			dates.append(float(raw_date))
+			dates.append(normalize_timestring(x[self.hvac_ts]))
 
 		if (self.eod_gap_fill == True):
 			dates.append(23.59)
@@ -318,16 +334,14 @@ def graph_defaults(html):
 	html.append("myChart.setGridColor('#a4a4a4');")
 	html.append("myChart.setFlagRadius(3);")
 	html.append("myChart.setFlagWidth(2);")
-	html.append("myChart.setAxisNameX('Hour');")
+	html.append("myChart.setAxisNameX('Time');")
 	html.append('myChart.setIntervalStartX(00);')
 	html.append('myChart.setIntervalEndX(24);')
 	html.append("myChart.setAxisWidth(1);")
 	html.append("myChart.setAxisValuesNumberX(25);")
 	html.append("myChart.setAxisValuesColor('#454545');")
-	# JSL: not sure why this was here
-	#html.append("myChart.setShowXValues(false);")
-	#for x in range(0, 25):
-	#	html.append("myChart.setLabelX([%s, %i]);" % (x, x))
+	html.append("myChart.setAxisPaddingBottom(38);")
+	html.append("myChart.setTextPaddingBottom(8);")
 	html.append("myChart.setBackgroundImage('images/chart_bg.jpg');")
 	html.append('myChart.setSize(%d, %d);' % (graph_width, graph_height))
 	html.append('myChart.draw();')
@@ -347,9 +361,9 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	setpoint_heating_data = hvac_data.return_setpoint_heating_readings()
 	time_data = hvac_data.return_timestrings()
 
-	html.append('<div id="graph-humidity-%s">Loading graph...</div>' % thermostat_name)
-	html.append('<div id="graph-cool-%s">Loading graph...</div>' % thermostat_name)
-	html.append('<div id="graph-heat-%s">Loading graph...</div>' % thermostat_name)
+	html.append('<div id="graph-humidity-%s" style="text-align: center;">Loading graph...</div>' % thermostat_name)
+	html.append('<div id="graph-cool-%s" style="text-align: center">Loading graph...</div>' % thermostat_name)
+	html.append('<div id="graph-heat-%s" style="text-align: center">Loading graph...</div>' % thermostat_name)
 
 	# cooling totals/cycles
 	mins_ac_total = 0
@@ -380,100 +394,127 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 		y = data[1]
 
 	humidity_matrix, cooling_matrix, heating_matrix, thermo_matrix = [], [], [], []
+	hum_last = csp_last = hsp_last = temp_last = 999, 999, 999, 999
+	t_last = 0
+	t_end = time_data[len(time_data) - 1]
 	for t, temp, hum, csp, hsp in zip(time_data, temperature_readings_data, humidity_readings_data, setpoint_cooling_data, setpoint_heating_data):
-		if (hum > 0 and hum <= 100):
-			humidity_matrix.append([t, hum])
-		cooling_matrix.append([t, csp])
-		heating_matrix.append([t, hsp])
-		thermo_matrix.append([t, temp])
+		if (hum != hum_last or t == t_end or int(t) - int(t_last) >= hvac_data.min_duplicate_data_points_interval):
+			# JSL: i get bogus high readings from the hygrometer sometimes,
+			# make sure value is within +50% of the average
+			if (hum > 0 and hum <= 100 and hum < (hvac_data.hvac_humidity_avg * 0.5 + hvac_data.hvac_humidity_avg)):
+				humidity_matrix.append([t, hum])
+		if (csp != csp_last or t == t_end or int(t) - int(t_last) >= hvac_data.min_duplicate_data_points_interval):
+			cooling_matrix.append([t, csp])
+		if (hsp != hsp_last or t == t_end or int(t) - int(t_last) >= hvac_data.min_duplicate_data_points_interval):
+			heating_matrix.append([t, hsp])
+		if (temp != temp_last or t == t_end or int(t) - int(t_last) >= hvac_data.min_duplicate_data_points_interval):
+			thermo_matrix.append([t, temp])
+		if (hvac_data.show_duplicate_data_points == False):
+			hum_last = hum
+			csp_last = csp
+			hsp_last = hsp
+			temp_last = temp
+			t_last = t
 
-	html.append('<div align="center">')
+	# Summary -- BEGIN
+	html.append('<hr>')
+	html.append('<div id="summary" style="text-align: center">')
 	html.append('Cooling totals: %s mins, %s cycles' % (mins_ac_total, mins_ac_cycles))
 	html.append(' &mdash; Heating totals: %s mins, %s cycles' % (mins_heat_total, mins_heat_cycles))
-	html.append('</div>')
-	html.append('<div align="center">')
+	html.append('<br>')
 	html.append('Filter runtime to date: %s hours (%s mins)' % (hvac_data.hvac_mins_filter_total / 60, hvac_data.hvac_mins_filter_total))
 	html.append(' &mdash; Last changed: %s' % (hvac_data.hvac_date_filter_changed))
-	html.append('</div>')
-	html.append('<div align="center">')
+	html.append('<br>')
 	html.append('Room temp min/max/avg: %s/%s/%s' % (hvac_data.hvac_temp_min, hvac_data.hvac_temp_max, hvac_data.hvac_temp_avg))
 	html.append(' &mdash; Humidity min/max/avg: %s/%s/%s' % (hvac_data.hvac_humidity_min, hvac_data.hvac_humidity_max, hvac_data.hvac_humidity_avg))
 	html.append('</div>')
 	html.append('<hr>')
+	# Summary -- END
 
-	html.append('''<a href='#' onClick='toggle_it("table-%s")'">Show/Hide Thermostat Data</a><br>'''% thermostat_name.replace(" ", ""))
-	html.append('<table id="table-%s" border=1 style="display:none;">' % thermostat_name.replace(" ", ""))
-	html.append("<caption>%s Data Chart</caption>" % thermostat_name)
-	html.append('<thead>')
-	html.append('<tr>')
+	# Raw data -- BEGIN
+	html.append('<table id="rawdata-%s" border="0" style="margin-left: auto; margin-right: auto;">' % (thermostat_name.replace(" ", "")))
+	html.append('<thead><tr>')
+	html.append('''<th colspan="3"><a href='#' onClick='toggle_it("table-%s"); toggle_it("table-mins-ac"); toggle_it("table-mins-heat")'">Toggle raw data for %s</a></th>''' % (thermostat_name.replace(" ", ""), thermostat_name))
+	html.append('</tr></thead>')
+
+	html.append('<tbody valign="top"><tr>')
+
+	html.append('<td>')
+	html.append('<table id="table-%s" border="1" style="display:none;">' % thermostat_name.replace(" ", ""))
+	html.append('<caption style="white-space: nowrap;">Temperature and Humidity Data</caption>')
+	html.append('<thead><tr>')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Humidity</th>')
-	html.append('<th scope="col">Cooling</th>')
-	html.append('<th scope="col">Heating</th>')
+	html.append('<th scope="col">Cool Setpoint</th>')
+	html.append('<th scope="col">Heat Setpoint</th>')
 	html.append('<th scope="col">Temperature</th>')
 	html.append('</tr></thead>')
 	html.append('<tbody>')
-	for data in hvac_data.hvac_raw_data:
-		html.append ('<tr>')
-		html.append ('<td scope="row">%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>' % (data[hvac_data.hvac_ts],
+	for data in reversed(hvac_data.hvac_raw_data):
+		html.append('<tr>')
+		html.append('<td scope="row">%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>' % (data[hvac_data.hvac_ts],
 			data[hvac_data.hvac_humidity], data[hvac_data.hvac_set_cool], data[hvac_data.hvac_set_heat],
 			data[hvac_data.hvac_temp]))
 		html.append('</tr>')
-	html.append('</tbody></table>')
+	html.append('</tbody>')
+	html.append('</table>')
+	html.append('</td>')
 
-	html.append('''<a href='#' onClick='toggle_it("table-mins-ac")'">Show/Hide Cooling Cycles</a><br>''')
-	html.append('<table id="table-mins-ac" border=1 style="display:none;">')
-	html.append("<caption>%s Cooling Cycle Chart</caption>" % thermostat_name)
-	html.append('<thead>')
-	html.append('<tr>')
+	html.append('<td>')
+	html.append('<table id="table-mins-ac" border="1" style="display:none;">')
+	html.append('<caption style="white-space: nowrap;">Cooling Cycles</caption>')
+	html.append('<thead><tr>')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Mode</th>')
 	html.append('</tr></thead>')
 	html.append('<tbody>')
 	mins_ac_matrix = []
 	for data in mins_ac_data:
-		stored_datetime = data[0]
-		x = stored_datetime.split(" ")[1][0:-3].replace(":",".")
-		y = data[1]
+		x = normalize_timestring(data[0])
+		y = int(data[1])
 		if y == 1:
 			onoff = "On"
 		else:
 			onoff = "Off"
 
-		mins_ac_matrix.append([float(x), int(y)])
+		mins_ac_matrix.append([x, y])
 
 		html.append('<tr>')
 		html.append('<td scope="row">%s</td><td>%s</td>' % (data[0], onoff))
 		html.append('</tr>')
-	html.append('</tbody></table>')
+	html.append('</tbody>')
+	html.append('</table>')
+	html.append('</td>')
 
-	html.append('''<a href='#' onClick='toggle_it("table-mins-heat")'">Show/Hide Heating Cycles</a><br>''')
-	html.append('<table id="table-mins-heat" border=1 style="display:none;">')
-	html.append("<caption>%s Heating Cycle Chart</caption>" % thermostat_name)
-	html.append('<thead>')
-	html.append('<tr>')
+	html.append('<td>')
+	html.append('<table id="table-mins-heat" border="1" style="display:none;">')
+	html.append('<caption style="white-space: nowrap;">Heating Cycles</caption>')
+	html.append('<thead><tr>')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Mode</th>')
 	html.append('</tr></thead>')
 	html.append('<tbody>')
 	mins_heat_matrix = []
 	for data in mins_heat_data:
-		stored_datetime = data[0]
-		x = stored_datetime.split(" ")[1][0:-3].replace(":",".")
-		y = data[1]
+		x = normalize_timestring(data[0])
+		y = int(data[1])
 		if y == 1:
 			onoff = "On"
 		else:
 			onoff = "Off"
 
-		mins_heat_matrix.append([float(x), int(y)])
+		mins_heat_matrix.append([x, y])
 
 		html.append ('<tr>')
 		html.append ('<td scope="row">%s</td><td>%s</td>' % (data[0], onoff))
 		html.append ('</tr>')
-	html.append('</tbody></table>')
+	html.append('</tbody>')
+	html.append('</table>')
+	html.append('</td>')
 
-	html.append('<HR>')
+	html.append('</tr></tbody>')
+	html.append('</table>')
+	# Raw data -- END
 
 	html.append('''<script type="text/javascript" src="js/jscharts.js"></script>''')
 
@@ -500,8 +541,8 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	for (x, y) in humidity_matrix:
 		html.append('\nmyChart.setTooltip([%f, "Time: %s   Humidity: %s", "humidity"]);\n' % (x, x, y))
-	html.append("myChart.setLineColor('#67ffca', 'humidity');")
-	html.append("myChart.setLineWidth(3, 'humidity');")
+	html.append("myChart.setLineColor('%s', 'humidity');" % (graph_color_humidity))
+	html.append("myChart.setLineWidth(%d, 'humidity');" % (graph_lw_humidity))
 	if mins_ac_total > 0 and len(mins_ac_matrix) != 0:
 		for (x, y) in mins_ac_matrix:
 			if y == 1:
@@ -509,8 +550,8 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 			else:
 				onoff = "OFF"
 			html.append('\nmyChart.setTooltip([%f, "Time: %s   Cool %s", "ac_cycles"]);\n' % (x, x, onoff))
-		html.append("myChart.setLineColor('#0000ff', 'ac_cycles');")
-		html.append("myChart.setLineWidth(1, 'ac_cycles');")
+		html.append("myChart.setLineColor('%s', 'ac_cycles');" % (graph_color_ac_cycles))
+		html.append("myChart.setLineWidth(%d, 'ac_cycles');" % (graph_lw_ac_cycles))
 	if mins_heat_total > 0 and len(mins_heat_matrix) != 0:
 		for (x, y) in mins_heat_matrix:
 			if y == 1:
@@ -518,8 +559,8 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 			else:
 				onoff = "OFF"
 			html.append('\nmyChart.setTooltip([%f, "Time: %s   Heat %s", "heat_cycles"]);\n' % (x, x, onoff))
-		html.append("myChart.setLineColor('#ff0000', 'heat_cycles');")
-		html.append("myChart.setLineWidth(1, 'heat_cycles');")
+		html.append("myChart.setLineColor('%s', 'heat_cycles');" % (graph_color_heat_cycles))
+		html.append("myChart.setLineWidth(%d, 'heat_cycles');" % (graph_lw_heat_cycles))
 
 	html.append('myChart.setTitle("%s - Humidity");' % thermostat_name)
 	html.append("myChart.setTitleColor('#67ffca');")
@@ -533,6 +574,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	html.append('</script>')
 	# Humidity graph -- END
 
+	# min and max Y axis values for cooling and heating graphs
 	y_min = min(hvac_data.hvac_temp_min, min(hvac_data.hvac_set_cool_min, hvac_data.hvac_set_heat_min))
 	y_max = max(hvac_data.hvac_temp_max, max(hvac_data.hvac_set_cool_max, hvac_data.hvac_set_heat_max)) + 3
 
@@ -551,12 +593,12 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	for (x, y) in thermo_matrix:
 		html.append('\nmyChart.setTooltip([%f, "Time: %s   Room Temp: %s", "thermo"]);\n' % (x, x, y))
-	html.append("myChart.setLineColor('#4f4f4f', 'thermo');")
-	html.append("myChart.setLineWidth(3, 'thermo');")
+	html.append("myChart.setLineColor('%s', 'thermo');" % (graph_color_thermo))
+	html.append("myChart.setLineWidth(%d, 'thermo');" % (graph_lw_thermo))
 	for (x, y) in cooling_matrix:
 		html.append('\nmyChart.setTooltip([%f, "Time: %s   Cool Temp: %s", "ac"]);\n' % (x, x, y))
-	html.append("myChart.setLineColor('#10109f', 'ac');")
-	html.append("myChart.setLineWidth(2, 'ac_cycles');")
+	html.append("myChart.setLineColor('%s', 'ac');" % (graph_color_ac))
+	html.append("myChart.setLineWidth(%d, 'ac');" % (graph_lw_ac))
 	html.append("myChart.setLineOpacity(1.0, 'ac_cycles');")
 	if mins_ac_total > 0 and len(mins_ac_matrix) != 0:
 		for (x, y) in mins_ac_matrix:
@@ -565,8 +607,8 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 			else:
 				onoff = "OFF"
 			html.append('\nmyChart.setTooltip([%f, "Time: %s   Cool %s", "ac_cycles"]);\n' % (x, x, onoff))
-		html.append("myChart.setLineColor('#0000ff', 'ac_cycles');")
-		html.append("myChart.setLineWidth(1, 'ac_cycles');")
+		html.append("myChart.setLineColor('%s', 'ac_cycles');" % (graph_color_ac_cycles))
+		html.append("myChart.setLineWidth(%d, 'ac_cycles');" % (graph_lw_ac_cycles))
 
 	html.append('myChart.setTitle("%s - Cooling");' % thermostat_name)
 	html.append("myChart.setTitleColor('#10109f');")
@@ -595,12 +637,12 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	for (x, y) in thermo_matrix:
 		html.append('\nmyChart.setTooltip([%f, "Time: %s   Room Temp: %s", "thermo"]);\n' % (x, x, y))
-	html.append("myChart.setLineColor('#4f4f4f', 'thermo');")
-	html.append("myChart.setLineWidth(3, 'thermo');")
+	html.append("myChart.setLineColor('%s', 'thermo');" % (graph_color_thermo))
+	html.append("myChart.setLineWidth(%d, 'thermo');" % (graph_lw_thermo))
 	for (x, y) in heating_matrix:
 		html.append('\nmyChart.setTooltip([%f, "Time: %s   Heat Temp: %s", "heat"]);\n' % (x, x, y))
-	html.append("myChart.setLineColor('#9f1010', 'heat');")
-	html.append("myChart.setLineWidth(2, 'heat_cycles');")
+	html.append("myChart.setLineColor('%s', 'heat');" % (graph_color_heat))
+	html.append("myChart.setLineWidth(%d, 'heat');" % (graph_lw_heat))
 	html.append("myChart.setLineOpacity(1.0, 'heat_cycles');")
 	if mins_heat_total > 0 and len(mins_heat_matrix) != 0:
 		for (x, y) in mins_heat_matrix:
@@ -609,8 +651,8 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 			else:
 				onoff = "OFF"
 			html.append('\nmyChart.setTooltip([%f, "Time: %s   Heat %s", "heat_cycles"]);\n' % (x, x, onoff))
-		html.append("myChart.setLineColor('#ff0000', 'heat_cycles');")
-		html.append("myChart.setLineWidth(1, 'heat_cycles');")
+		html.append("myChart.setLineColor('%s', 'heat_cycles');" % (graph_color_heat_cycles))
+		html.append("myChart.setLineWidth(%d, 'heat_cycles');" % (graph_lw_heat_cycles))
 
 	html.append('myChart.setTitle("%s - Heating");' % thermostat_name)
 	html.append("myChart.setTitleColor('#9f1010');")
@@ -648,11 +690,11 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 	# Split from the index function to clarify / simplify the visual clutter
 	#
 	def form_top(self, html_elems, dates, selected_date):
-		html_elems.append("<head>\n")
-		html_elems.append("<title>Indigo HVAC Log Viewer</title></Head>\n")
+		html_elems.append('<head>')
+		html_elems.append('<title>Indigo HVAC Log Viewer</title></head>')
 		html_elems.append('<link rel="stylesheet" type="text/css" href="css/hvac.css">')
 		html_elems.append('<meta name="apple-mobile-web-app-capable" content="yes">')
-		html_elems.append('<meta name="viewport" content="width=320,initial-scale=0.8,maximum-scale=1.6,user-scalable=yes"/>')
+		html_elems.append('<meta name="viewport" content="width=320, initial-scale=0.8, maximum-scale=1.6, user-scalable=yes"/>')
 		html_elems.append('''<script type="text/javascript" src="js/jscharts.js"></script>''')
 		html_elems.append('''<script language="javascript">
 			function toggle_it(itemID) { 
@@ -663,13 +705,11 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 					document.getElementById(itemID).style.display = 'none'; 
 				} 
 		}</script>''')
+		html_elems.append('</head>')
 
-		html_elems.append("</head>")
-		html_elems.append("<body>\n")
-
-		html_elems.append('<table border=0 width="95%"><TR>')
-		html_elems.append('<form method="post" action="">')
-		html_elems.append("<td>")
+		html_elems.append("<body>")
+		html_elems.append('<table border="0">')
+		html_elems.append('<tr><form method="post" action=""><td>')
 		html_elems.append('View Day - <select name="date_selection" size="1">')
 		html_elems.append('<option>Yesterday')
 		dates.sort(reverse=True)
@@ -680,7 +720,8 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 				html_elems.append('<option>%s'% day)
 		html_elems.append('</select>')
 		html_elems.append('<input type="submit">')
-		html_elems.append("</td></tr> </table>\n")
+		html_elems.append('</td></tr>')
+		html_elems.append('</table>')
 		return html_elems
 
 	def index(self, date_selection="None"):
@@ -722,3 +763,5 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 		return ''.join(html_elems)
 
 	index.exposed = True
+
+# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
