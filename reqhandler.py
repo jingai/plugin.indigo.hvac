@@ -19,6 +19,7 @@ import copy
 import math
 import glob
 import cgi
+import itertools
 
 kSqlConfigFile = "/Library/Application Support/Perceptive Automation/Indigo 4/IndigoSqlClient/IndigoSqlClient.conf"
 
@@ -385,8 +386,8 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	time_data = hvac_data.return_timestrings()
 
 	html.append('<div id="graph-humidity-%s" style="text-align: center;">Loading graph...</div>' % thermostat_name)
-	html.append('<div id="graph-cool-%s" style="text-align: center">Loading graph...</div>' % thermostat_name)
-	html.append('<div id="graph-heat-%s" style="text-align: center">Loading graph...</div>' % thermostat_name)
+	html.append('<div id="graph-cool-%s" style="text-align: center;">Loading graph...</div>' % thermostat_name)
+	html.append('<div id="graph-heat-%s" style="text-align: center;">Loading graph...</div>' % thermostat_name)
 
 	# cooling totals/cycles
 	mins_ac_total = 0
@@ -448,7 +449,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	# Summary -- BEGIN
 	html.append('<hr>')
-	html.append('<div id="summary" style="text-align: center">')
+	html.append('<div id="summary" style="text-align: center;">')
 	html.append('Cooling totals: %s mins, %s cycles' % (mins_ac_total, mins_ac_cycles))
 	html.append(' &mdash; Heating totals: %s mins, %s cycles' % (mins_heat_total, mins_heat_cycles))
 	html.append('<br>')
@@ -462,16 +463,12 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	# Summary -- END
 
 	# Raw data -- BEGIN
-	html.append('<table id="rawdata-%s" border="0" style="margin-left: auto; margin-right: auto;">' % (thermostat_name.replace(" ", "")))
-	html.append('<thead><tr>')
-	html.append('''<th colspan="3"><a href='#' onClick='toggle_it("table-%s"); toggle_it("table-mins-ac"); toggle_it("table-mins-heat")'">Toggle raw data for %s</a></th>''' % (thermostat_name.replace(" ", ""), thermostat_name))
-	html.append('</tr></thead>')
-
+	html.append('<table id="rawdata-%s">' % (thermostat_name.replace(" ", "")))
 	html.append('<tbody valign="top"><tr>')
 
 	html.append('<td>')
-	html.append('<table id="table-%s" border="1" style="display:none;">' % thermostat_name.replace(" ", ""))
-	html.append('<caption style="white-space: nowrap;">Temperature and Humidity Data</caption>')
+	html.append('<table id="table-%s" style="border-style: outset; border-width: 2px;">' % thermostat_name.replace(" ", ""))
+	html.append('<caption style="color: %s">Temperature and Humidity Data</caption>' % graph_color_humidity)
 	html.append('<thead><tr>')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Humidity</th>')
@@ -480,8 +477,9 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	html.append('<th scope="col">Temperature</th>')
 	html.append('</tr></thead>')
 	html.append('<tbody>')
-	for data in reversed(hvac_data.hvac_raw_data):
-		html.append('<tr>')
+	clvals = itertools.cycle(['even', 'odd'])
+	for clval, data in itertools.izip(clvals, reversed(hvac_data.hvac_raw_data)):
+		html.append('<tr class="row%s">' % clval)
 		html.append('<td scope="row">%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>' % (data[hvac_data.hvac_ts],
 			data[hvac_data.hvac_humidity], data[hvac_data.hvac_set_cool], data[hvac_data.hvac_set_heat],
 			data[hvac_data.hvac_temp]))
@@ -491,15 +489,16 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	html.append('</td>')
 
 	html.append('<td>')
-	html.append('<table id="table-mins-ac" border="1" style="display:none;">')
-	html.append('<caption style="white-space: nowrap;">Cooling Cycles</caption>')
+	html.append('<table id="table-mins-ac"  style="border-style: outset; border-width: 2px;">')
+	html.append('<caption style="color: %s">Cooling Cycles</caption>' % graph_color_ac)
 	html.append('<thead><tr>')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Mode</th>')
 	html.append('</tr></thead>')
 	html.append('<tbody>')
 	mins_ac_matrix = []
-	for data in mins_ac_data:
+	clvals = itertools.cycle(['even', 'odd'])
+	for clval, data in itertools.izip(clvals, mins_ac_data):
 		x = normalize_timestring(data[0])
 		y = int(data[1])
 		if y == 1:
@@ -509,7 +508,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 		mins_ac_matrix.append([x, y])
 
-		html.append('<tr>')
+		html.append('<tr class="row%s">' % clval)
 		html.append('<td scope="row">%s</td><td>%s</td>' % (data[0], onoff))
 		html.append('</tr>')
 	html.append('</tbody>')
@@ -517,15 +516,16 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	html.append('</td>')
 
 	html.append('<td>')
-	html.append('<table id="table-mins-heat" border="1" style="display:none;">')
-	html.append('<caption style="white-space: nowrap;">Heating Cycles</caption>')
+	html.append('<table id="table-mins-heat" style="border-style: outset; border-width: 2px;">')
+	html.append('<caption style="color: %s">Heating Cycles</caption>' % graph_color_heat)
 	html.append('<thead><tr>')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Mode</th>')
 	html.append('</tr></thead>')
 	html.append('<tbody>')
 	mins_heat_matrix = []
-	for data in mins_heat_data:
+	clvals = itertools.cycle(['even', 'odd'])
+	for clval, data in itertools.izip(clvals, mins_heat_data):
 		x = normalize_timestring(data[0])
 		y = int(data[1])
 		if y == 1:
@@ -535,9 +535,9 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 		mins_heat_matrix.append([x, y])
 
-		html.append ('<tr>')
-		html.append ('<td scope="row">%s</td><td>%s</td>' % (data[0], onoff))
-		html.append ('</tr>')
+		html.append('<tr class="row%s">' % clval)
+		html.append('<td scope="row">%s</td><td>%s</td>' % (data[0], onoff))
+		html.append('</tr>')
 	html.append('</tbody>')
 	html.append('</table>')
 	html.append('</td>')
@@ -738,8 +738,8 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 		html_elems.append('</head>')
 
 		html_elems.append("<body>")
-		html_elems.append('<table border="0">')
-		html_elems.append('<tr><form method="post" action="">')
+		html_elems.append('<table>')
+		html_elems.append('<tr class="rowodd"><form method="post" action="">')
 		html_elems.append('<td>')
 		html_elems.append('View Day - <select name="date_selection" size="1">')
 		html_elems.append('<option>Yesterday')

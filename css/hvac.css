@@ -42,22 +42,37 @@ table {
 	font-family: Arial, Verdana, sans-serif;
 	font-size: 14px;
 	color: Black;
-	margin-top: 0px;
-	margin-right: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
-	padding-top: 0px;
-	padding-right: 0px;
-	padding-bottom: 0px;
-	padding-left: 0px;
+	margin-left: auto;
+	margin-right: auto;
+	border-width: 0px;
 	border-collapse: collapse;
 	table-layout: fixed;
 }
 
-tr.rowodd {
-	background-color: #FFFFF0;
+table caption {
+	font-family: Arial, Verdana, sans-serif;
+	font-size: 14px;
+	white-space: nowrap;
 }
 
-tr.roweven {
-	background-color: #FFFFCC;
+table th {
+	border-width: 2px;
+	padding: 4px;
+	text-align: left;
+	border-color: Gray;
+	background-color: White;
+}
+
+table td {
+	border-width: 0px;
+	padding: 4px;
+	border-color: Gray;
+}
+
+.roweven {
+	background-color: #FAF0E6;
+}
+
+.rowodd {
+	background-color: #FFFFF0;
 }
