@@ -63,7 +63,7 @@ def normalize_timestring(ts):
 	return round(float(raw_time[0]) + float(raw_time[1]) / 60.0, 2)
 
 class hvac_interface:
-	def __init__(self, sql_db_file):
+	def __init__(self, sql_db_file, show_duplicate_data):
 		self.hvac_id 							= 0 
 		self.hvac_ts 							= 1
 		self.hvac_dev_name 						= 2
@@ -105,7 +105,10 @@ class hvac_interface:
 		self.bod_gap_fill						= False
 		self.eod_gap_fill						= False
 
-		self.show_duplicate_data_points			= False
+		if show_duplicate_data == "True":
+			self.show_duplicate_data_points		= True
+		else:
+			self.show_duplicate_data_points		= False
 		self.min_duplicate_data_points_interval	= 1 # hours
 
 		self.dbFileName = sql_db_file
@@ -716,7 +719,7 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 	# Contains the top of the report
 	# Split from the index function to clarify / simplify the visual clutter
 	#
-	def form_top(self, html_elems, dates, selected_date):
+	def form_top(self, html_elems, dates, selected_date, show_duplicate_data):
 		html_elems.append('<head>')
 		html_elems.append('<title>Indigo HVAC Log Viewer</title></head>')
 		html_elems.append('<link rel="stylesheet" type="text/css" href="css/hvac.css">')
@@ -736,22 +739,32 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 
 		html_elems.append("<body>")
 		html_elems.append('<table border="0">')
-		html_elems.append('<tr><form method="post" action=""><td>')
+		html_elems.append('<tr><form method="post" action="">')
+		html_elems.append('<td>')
 		html_elems.append('View Day - <select name="date_selection" size="1">')
 		html_elems.append('<option>Yesterday')
 		dates.sort(reverse=True)
 		for day in dates:
 			if selected_date == day:
-				html_elems.append('<option selected>%s'% day)
+				html_elems.append('<option selected>%s' % day)
 			else:
-				html_elems.append('<option>%s'% day)
+				html_elems.append('<option>%s' % day)
 		html_elems.append('</select>')
+		html_elems.append('</td>')
+		html_elems.append('<td>')
+		html_elems.append('<input type="checkbox" name="show_duplicate_data" value="True" ')
+		if show_duplicate_data == "True":
+			html_elems.append('checked="checked" ')
+		html_elems.append('/>Show duplicate data points')
+		html_elems.append('</td>')
+		html_elems.append('<td>')
 		html_elems.append('<input type="submit">')
-		html_elems.append('</td></tr>')
+		html_elems.append('</td>')
+		html_elems.append('</tr>')
 		html_elems.append('</table>')
 		return html_elems
 
-	def index(self, date_selection="None"):
+	def index(self, date_selection="None", show_duplicate_data="False"):
 		cherrypy.response.headers['Content-Type'] = 'text/html'
 		if date_selection == "None":
 			# default to yesterday
@@ -778,8 +791,8 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 		except Exception, e:
 			return "The plugin can't read the config file for the SQL logging client."
 
-		hvac = hvac_interface(dbFileName)
-		html_elems = self.form_top(html_elems, hvac.return_datestrings(), date_selection)
+		hvac = hvac_interface(dbFileName, show_duplicate_data)
+		html_elems = self.form_top(html_elems, hvac.return_datestrings(), date_selection, show_duplicate_data)
 
 		thermostats = hvac.retrieve_thermo_names(date_selection)
 		for x in thermostats:
