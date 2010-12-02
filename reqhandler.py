@@ -82,10 +82,12 @@ class hvac_interface:
 		self.hvac_set_cool_yest					= 0
 		self.hvac_set_cool_min					= 0
 		self.hvac_set_cool_max					= 0
+		self.hvac_set_cool_avg					= 0
 		self.hvac_set_heat						= 6
 		self.hvac_set_heat_yest					= 0
 		self.hvac_set_heat_min					= 0
 		self.hvac_set_heat_max					= 0
+		self.hvac_set_heat_avg					= 0
 
 		self.hvac_current_mode 					= 7
 		self.hvac_fan_mode						= 8
@@ -178,14 +180,23 @@ class hvac_interface:
 		if (self.bod_gap_fill == True):
 			thermo.append(int(self.hvac_temp_yest))
 
+		# calculate mean
+		avg = 0
 		for x in self.hvac_raw_data:
-			if self.hvac_temp_min == 0 or x[self.hvac_temp] < self.hvac_temp_min:
-				self.hvac_temp_min = x[self.hvac_temp]
-			if x[self.hvac_temp] > self.hvac_temp_max:
-				self.hvac_temp_max = x[self.hvac_temp]
-			self.hvac_temp_avg += x[self.hvac_temp]
+			avg += x[self.hvac_temp]
+		avg = int(math.ceil(float(avg) / len(self.hvac_raw_data)))
 
-			thermo.append(int(x[self.hvac_temp]))
+		# add all points that are within 50% of mean value
+		for x in self.hvac_raw_data:
+			diff = avg * 0.5
+			if (x[self.hvac_temp] < diff + avg and x[self.hvac_temp] > avg - diff):
+				if self.hvac_temp_min == 0 or x[self.hvac_temp] < self.hvac_temp_min:
+					self.hvac_temp_min = x[self.hvac_temp]
+				if x[self.hvac_temp] > self.hvac_temp_max:
+					self.hvac_temp_max = x[self.hvac_temp]
+				self.hvac_temp_avg += x[self.hvac_temp]
+
+				thermo.append(int(x[self.hvac_temp]))
 
 		self.hvac_temp_avg = int(math.ceil(float(self.hvac_temp_avg) / len(self.hvac_raw_data)))
 
@@ -202,15 +213,23 @@ class hvac_interface:
 		if (self.bod_gap_fill == True):
 			thermo.append(int(self.hvac_humidity_yest))
 
+		# calculate mean
+		avg = 0
 		for x in self.hvac_raw_data:
-			if (x[self.hvac_humidity] > 0 and x[self.hvac_humidity] <= 100):
+			avg += x[self.hvac_humidity]
+		avg = int(math.ceil(float(avg) / len(self.hvac_raw_data)))
+
+		# add all points that are within 50% of mean value
+		for x in self.hvac_raw_data:
+			diff = avg * 0.5
+			if (x[self.hvac_humidity] < diff + avg and x[self.hvac_humidity] > avg - diff):
 				if self.hvac_humidity_min == 0 or x[self.hvac_humidity] < self.hvac_humidity_min:
 					self.hvac_humidity_min = x[self.hvac_humidity]
 				if x[self.hvac_humidity] > self.hvac_humidity_max:
 					self.hvac_humidity_max = x[self.hvac_humidity]
 				self.hvac_humidity_avg += x[self.hvac_humidity]
 
-			thermo.append(int(x[self.hvac_humidity]))
+				thermo.append(int(x[self.hvac_humidity]))
 
 		self.hvac_humidity_avg = int(math.ceil(float(self.hvac_humidity_avg) / len(self.hvac_raw_data)))
 
@@ -227,13 +246,25 @@ class hvac_interface:
 		if (self.bod_gap_fill == True):
 			thermo.append(int(self.hvac_set_cool_yest))
 
+		# calculate mean
+		avg = 0
 		for x in self.hvac_raw_data:
-			if self.hvac_set_cool_min == 0 or x[self.hvac_set_cool] < self.hvac_set_cool_min:
-				self.hvac_set_cool_min = x[self.hvac_set_cool]
-			if x[self.hvac_set_cool] > self.hvac_set_cool_max:
-				self.hvac_set_cool_max = x[self.hvac_set_cool]
+			avg += x[self.hvac_set_cool]
+		avg = int(math.ceil(float(avg) / len(self.hvac_raw_data)))
 
-			thermo.append(int(x[self.hvac_set_cool]))
+		# add all points that are within 50% of mean value
+		for x in self.hvac_raw_data:
+			diff = avg * 0.5
+			if (x[self.hvac_set_cool] < diff + avg and x[self.hvac_set_cool] > avg - diff):
+				if self.hvac_set_cool_min == 0 or x[self.hvac_set_cool] < self.hvac_set_cool_min:
+					self.hvac_set_cool_min = x[self.hvac_set_cool]
+				if x[self.hvac_set_cool] > self.hvac_set_cool_max:
+					self.hvac_set_cool_max = x[self.hvac_set_cool]
+				self.hvac_set_cool_avg += x[self.hvac_set_cool]
+
+				thermo.append(int(x[self.hvac_set_cool]))
+
+		self.hvac_set_cool_avg = int(math.ceil(float(self.hvac_set_cool_avg) / len(self.hvac_raw_data)))
 
 		if (self.eod_gap_fill == True):
 			thermo.append(int(self.hvac_raw_data[len(self.hvac_raw_data) - 1][self.hvac_set_cool]))
@@ -248,13 +279,25 @@ class hvac_interface:
 		if (self.bod_gap_fill == True):
 			thermo.append(int(self.hvac_set_heat_yest))
 
+		# calculate mean
+		avg = 0
 		for x in self.hvac_raw_data:
-			if self.hvac_set_heat_min == 0 or x[self.hvac_set_heat] < self.hvac_set_heat_min:
-				self.hvac_set_heat_min = x[self.hvac_set_heat]
-			if x[self.hvac_set_heat] > self.hvac_set_heat_max:
-				self.hvac_set_heat_max = x[self.hvac_set_heat]
+			avg += x[self.hvac_set_heat]
+		avg = int(math.ceil(float(avg) / len(self.hvac_raw_data)))
 
-			thermo.append(int(x[self.hvac_set_heat]))
+		# add all points that are within 50% of mean value
+		for x in self.hvac_raw_data:
+			diff = avg * 0.5
+			if (x[self.hvac_set_heat] < diff + avg and x[self.hvac_set_heat] > avg - diff):
+				if self.hvac_set_heat_min == 0 or x[self.hvac_set_heat] < self.hvac_set_heat_min:
+					self.hvac_set_heat_min = x[self.hvac_set_heat]
+				if x[self.hvac_set_heat] > self.hvac_set_heat_max:
+					self.hvac_set_heat_max = x[self.hvac_set_heat]
+				self.hvac_set_heat_avg += x[self.hvac_set_heat]
+
+				thermo.append(int(x[self.hvac_set_heat]))
+
+		self.hvac_set_heat_avg = int(math.ceil(float(self.hvac_set_heat_avg) / len(self.hvac_raw_data)))
 
 		if (self.eod_gap_fill == True):
 			thermo.append(int(self.hvac_raw_data[len(self.hvac_raw_data) - 1][self.hvac_set_heat]))
@@ -372,26 +415,33 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	humidity_matrix, cooling_matrix, heating_matrix, thermo_matrix = [], [], [], []
 	hum_last = csp_last = hsp_last = temp_last = 999, 999, 999, 999
-	t_last = 0
+	t_hum_last = t_csp_last = t_hsp_last = t_temp_last = 999, 999, 999, 999
 	t_end = time_data[len(time_data) - 1]
 	for t, temp, hum, csp, hsp in zip(time_data, temperature_readings_data, humidity_readings_data, setpoint_cooling_data, setpoint_heating_data):
-		if (hum != hum_last or t == t_end or int(t) - int(t_last) >= hvac_data.min_duplicate_data_points_interval):
-			# JSL: i get bogus high readings from the hygrometer sometimes,
-			# make sure value is within +50% of the average
-			if (hum > 0 and hum <= 100 and hum < (hvac_data.hvac_humidity_avg * 0.5 + hvac_data.hvac_humidity_avg)):
+		if (hum != hum_last or t == t_end or int(t) - int(t_hum_last) >= hvac_data.min_duplicate_data_points_interval):
+			if (hum >= hvac_data.hvac_humidity_min and hum <= hvac_data.hvac_humidity_max):
 				humidity_matrix.append([t, hum])
-		if (csp != csp_last or t == t_end or int(t) - int(t_last) >= hvac_data.min_duplicate_data_points_interval):
-			cooling_matrix.append([t, csp])
-		if (hsp != hsp_last or t == t_end or int(t) - int(t_last) >= hvac_data.min_duplicate_data_points_interval):
-			heating_matrix.append([t, hsp])
-		if (temp != temp_last or t == t_end or int(t) - int(t_last) >= hvac_data.min_duplicate_data_points_interval):
-			thermo_matrix.append([t, temp])
-		if (hvac_data.show_duplicate_data_points == False):
-			hum_last = hum
-			csp_last = csp
-			hsp_last = hsp
-			temp_last = temp
-			t_last = t
+				if (hvac_data.show_duplicate_data_points == False):
+					hum_last = hum
+					t_hum_last = t
+		if (csp != csp_last or t == t_end or int(t) - int(t_csp_last) >= hvac_data.min_duplicate_data_points_interval):
+			if (csp >= hvac_data.hvac_set_cool_min and csp <= hvac_data.hvac_set_cool_max):
+				cooling_matrix.append([t, csp])
+				if (hvac_data.show_duplicate_data_points == False):
+					csp_last = csp
+					t_csp_last = t
+		if (hsp != hsp_last or t == t_end or int(t) - int(t_hsp_last) >= hvac_data.min_duplicate_data_points_interval):
+			if (hsp >= hvac_data.hvac_set_heat_min and hsp <= hvac_data.hvac_set_heat_max):
+				heating_matrix.append([t, hsp])
+				if (hvac_data.show_duplicate_data_points == False):
+					hsp_last = hsp
+					t_hsp_last = t
+		if (temp != temp_last or t == t_end or int(t) - int(t_temp_last) >= hvac_data.min_duplicate_data_points_interval):
+			if (temp >= hvac_data.hvac_temp_min and temp <= hvac_data.hvac_temp_max):
+				thermo_matrix.append([t, temp])
+				if (hvac_data.show_duplicate_data_points == False):
+					temp_last = temp
+					t_temp_last = t
 
 	# Summary -- BEGIN
 	html.append('<hr>')
