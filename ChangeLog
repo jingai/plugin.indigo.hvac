@@ -13,7 +13,7 @@
 
 2.1.0  2010-11-06  Jonathan Lane <jingai@floatingpenguins.com>
 
-        * Split into three graphs: Humidity, Cooling, and Heating
+        * Split into three graphs- Humidity, Cooling, and Heating
 
 2.1.1  2010-11-14  Jonathan Lane <jingai@floatingpenguins.com>
 
@@ -22,4 +22,9 @@
 2.2.0  2010-11-24  Jonathan Lane <jingai@floatingpenguins.com>
 
 	* Aesthetic changes
+
+2.2.1  2010-12-01  Jonathan Lane <jingai@floatingpenguins.com>
+
+	* Add checkbox to show duplicate data points
+	* Dump obviously bogus data points
 
