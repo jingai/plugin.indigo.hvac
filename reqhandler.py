@@ -766,8 +766,7 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 
 	def index(self, date_selection="None", show_duplicate_data="False"):
 		cherrypy.response.headers['Content-Type'] = 'text/html'
-		if date_selection == "None":
-			# default to yesterday
+		if (date_selection == "None" or date_selection == "Yesterday"):
 			date_selection = datetime.date.today() - datetime.timedelta(1)
 		else:
 			pass
