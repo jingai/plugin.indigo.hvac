@@ -1,3 +1,4 @@
+* use dygraph instead of jscharts
 * add comments to the code
 * infer compressor/heat stage from temperature/setpoint differential
 * infer dehumidify cycle temperature and humidity readings
