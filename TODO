@@ -1,4 +1,3 @@
-* style sheet for raw data table (pretty it up)
 * add comments to the code
 * infer compressor/heat stage from temperature/setpoint differential
 * infer dehumidify cycle temperature and humidity readings

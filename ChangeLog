@@ -28,3 +28,7 @@
 	* Add checkbox to show duplicate data points
 	* Dump obviously bogus data points
 
+2.2.2  2010-12-02  Jonathan Lane <jingai@floatingpenguins.com>
+
+	* Clean up appearance of raw data charts
+
