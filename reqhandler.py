@@ -310,21 +310,43 @@ class hvac_interface:
 
 	def return_mins_ac_cycle_readings(self):
 		thermo = []
+		if len(self.hvac_mins_ac_raw_data) == 0:
+			return thermo
+
 		for x in self.hvac_mins_ac_raw_data:
 			if x[0] == "AC_Started":
-				thermo.append([x[self.hvac_mins_ac_ts], int(1)])
+				thermo.append([x[self.hvac_mins_ac_ts], 1])
 			elif x[0] == "AC_dailymins":
-				thermo.append([x[self.hvac_mins_ac_ts], int(0)])
+				thermo.append([x[self.hvac_mins_ac_ts], 0])
+
+		# default to OFF for first data point if prior day contains no cycle data
+		if (self.bod_gap_fill == True):
+			dt = self.hvac_mins_ac_raw_data[len(self.hvac_mins_ac_raw_data) - 1][self.hvac_mins_ac_ts].split(" ")
+			st = float(dt[1][0:-3].replace(":","."))
+			if (st > 0.0):
+				dt[1] = "00:00:00"
+				thermo.append([' '.join(dt), 0])
 
 		return thermo
 
 	def return_mins_heat_cycle_readings(self):
 		thermo = []
+		if len(self.hvac_mins_heat_raw_data) == 0:
+			return thermo
+
 		for x in self.hvac_mins_heat_raw_data:
 			if x[0] == "Heating_Started":
-				thermo.append([x[self.hvac_mins_heat_ts], int(1)])
+				thermo.append([x[self.hvac_mins_heat_ts], 1])
 			elif x[0] == "Heating_dailymins":
-				thermo.append([x[self.hvac_mins_heat_ts], int(0)])
+				thermo.append([x[self.hvac_mins_heat_ts], 0])
+
+		# default to OFF for first data point if prior day contains no cycle data
+		if (self.bod_gap_fill == True):
+			dt = self.hvac_mins_heat_raw_data[len(self.hvac_mins_heat_raw_data) - 1][self.hvac_mins_heat_ts].split(" ")
+			st = float(dt[1][0:-3].replace(":","."))
+			if (st > 0.0):
+				dt[1] = "00:00:00"
+				thermo.append([' '.join(dt), 0])
 
 		return thermo
 
