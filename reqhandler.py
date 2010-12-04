@@ -490,12 +490,12 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	html.append('<td>')
 	html.append('<table id="table-temp-%s" style="border-style: outset; border-width: 2px;">' % thermostat_name.replace(" ", ""))
-	html.append('<caption style="color: %s">Temperature Data</caption>' % graph_color_thermo)
-	html.append('<thead><tr>')
+	html.append('<caption style="color: %s;">Temperature Data</caption>' % graph_color_thermo)
+	html.append('<thead><tr style="font-size: 12;">')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Set Cool</th>')
 	html.append('<th scope="col">Set Heat</th>')
-	html.append('<th scope="col">Temperature</th>')
+	html.append('<th scope="col">Temp</th>')
 	html.append('</tr></thead>')
 	html.append('<tbody>')
 	clvals = itertools.cycle(['even', 'odd'])
@@ -510,8 +510,8 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	html.append('<td>')
 	html.append('<table id="table-hum-%s" style="border-style: outset; border-width: 2px;">' % thermostat_name.replace(" ", ""))
-	html.append('<caption style="color: %s">Humidity Data</caption>' % graph_color_humidity)
-	html.append('<thead><tr>')
+	html.append('<caption style="color: %s;">Humidity Data</caption>' % graph_color_humidity)
+	html.append('<thead><tr style="font-size: 12;">')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Humidity</th>')
 	html.append('</tr></thead>')
@@ -527,8 +527,8 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	html.append('<td>')
 	html.append('<table id="table-mins-ac"  style="border-style: outset; border-width: 2px;">')
-	html.append('<caption style="color: %s">Cooling Cycles</caption>' % graph_color_ac)
-	html.append('<thead><tr>')
+	html.append('<caption style="color: %s;">Cooling Cycles</caption>' % graph_color_ac)
+	html.append('<thead><tr style="font-size: 12;">')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Mode</th>')
 	html.append('</tr></thead>')
@@ -554,8 +554,8 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	html.append('<td>')
 	html.append('<table id="table-mins-heat" style="border-style: outset; border-width: 2px;">')
-	html.append('<caption style="color: %s">Heating Cycles</caption>' % graph_color_heat)
-	html.append('<thead><tr>')
+	html.append('<caption style="color: %s;">Heating Cycles</caption>' % graph_color_heat)
+	html.append('<thead><tr style="font-size: 12;">')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Mode</th>')
 	html.append('</tr></thead>')
@@ -775,8 +775,10 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 		html_elems.append('</head>')
 
 		html_elems.append("<body>")
-		html_elems.append('<table>')
-		html_elems.append('<tr class="rowodd"><form method="post" action="">')
+		html_elems.append('<table><tr><td>')
+
+		html_elems.append('<table style="margin-left: 0px;">')
+		html_elems.append('<tr><form method="post" action="">')
 		html_elems.append('<td>')
 		html_elems.append('View Day - <select name="date_selection" size="1">')
 		html_elems.append('<option>Yesterday')
@@ -834,7 +836,8 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 		for x in thermostats:
 			html_elems = create_graphs(html_elems, hvac, x[0], date_selection)
 
-		html_elems.append("</body>\n")
+		html_elems.append('</td></tr></table>')
+		html_elems.append('</body>')
 
 		return ''.join(html_elems)
 
