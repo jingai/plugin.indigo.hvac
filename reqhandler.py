@@ -583,8 +583,6 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	html.append('</table>')
 	# Raw data -- END
 
-	html.append('''<script type="text/javascript" src="js/jscharts/jscharts.js"></script>''')
-
 	# Humidity graph -- BEGIN
 	html.append('<script type="text/javascript">')
 	html.append("var myChart = new JSChart('graph-humidity-%s', 'line');" % thermostat_name)
@@ -762,7 +760,7 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 		html_elems.append('<link rel="stylesheet" type="text/css" href="css/hvac.css">')
 		html_elems.append('<meta name="apple-mobile-web-app-capable" content="yes">')
 		html_elems.append('<meta name="viewport" content="width=320, initial-scale=0.8, maximum-scale=1.6, user-scalable=yes"/>')
-		html_elems.append('''<script type="text/javascript" src="js/jscharts/jscharts.js"></script>''')
+		html_elems.append('<script type="text/javascript" src="js/jscharts/jscharts.js"></script>')
 		html_elems.append('''<script language="javascript">
 			function toggle_it(itemID) { 
 				// Toggle visibility between none and inline 
