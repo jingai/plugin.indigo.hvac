@@ -36,3 +36,8 @@
 
 	* Separate temp data from humidity data in charts
 
+2.2.4  2010-12-04  Jonathan Lane <jingai@floatingpenguins.com>
+
+	* Fix beginning-of-day gap fill
+	* More legible HTML for small devices (e.g. iPhone)
+
