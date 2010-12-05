@@ -1,60 +1,53 @@
 #!python
 
-import sqlite3
+import os
 import datetime
+import copy
+import math
+import itertools
+import sqlite3
 import ConfigParser
-import re
-import calendar
-import time
 import cherrypy
 from cherrypy import _cperror
 from indigopy import indigoconn as ic
 from indigopy import indigodb as idb
 from indigopy.basereqhandler import BaseRequestHandler, kTrueStr, kFalseStr, kEmptyStr, kTextPageStr, kHtmlPageStr, kXmlPageStr
-import socket
-import os
-import os.path
-import sys
-import copy
-import math
-import glob
-import cgi
-import itertools
 
-kSqlConfigFile = "/Library/Application Support/Perceptive Automation/Indigo 4/IndigoSqlClient/IndigoSqlClient.conf"
+kSqlConfigPath = "/Library/Application Support/Perceptive Automation/Indigo 4/IndigoSqlClient"
+kSqlConfigFile = "IndigoSqlClient.conf"
 
-graph_width				= 1016			# pixels
-graph_height			= 320			# pixels
-graph_color_thermo		= '#4f4f4f'
-graph_color_humidity	= '#67ffca'
-graph_color_ac			= '#10109f'
-graph_color_ac_cycles	= '#0000ff'
-graph_color_heat		= '#9f1010'
-graph_color_heat_cycles	= '#ff0000'
-graph_lw_thermo			= 3				# line width in pixels
-graph_lw_humidity		= 3				# line width in pixels
-graph_lw_ac				= 2				# line width in pixels
-graph_lw_ac_cycles		= 1				# line width in pixels
-graph_lw_heat			= 2				# line width in pixels
-graph_lw_heat_cycles	= 1				# line width in pixels
+kGraphWidth				= 1016			# pixels
+kGraphHeight			= 320			# pixels
+kGraphColorThermo		= '#4f4f4f'
+kGraphColorHumidity		= '#67ffca'
+kGraphColorAc			= '#10109f'
+kGraphColorAcCycles		= '#0000ff'
+kGraphColorHeat			= '#9f1010'
+kGraphColorHeatCycles	= '#ff0000'
+kGraphLwThermo			= 3				# line width in pixels
+kGraphLwHumidity		= 3				# line width in pixels
+kGraphLwAc				= 2				# line width in pixels
+kGraphLwAcCycles		= 1				# line width in pixels
+kGraphLwHeat			= 2				# line width in pixels
+kGraphLwHeatCycles		= 1				# line width in pixels
 
 
 ####################
 # Optional hooks to provide a plugin name and description (shown in Event Log and plugin index)
 def PluginName():
-	return u"Thermostat Temperature Historical Readings"
+	return u"Thermostat Historical Readings"
 
 def PluginDescription():
-	return u"Displays recent information historically from your Thermostat."
+	return u"Graphs and charts historical thermostat readings."
 
 def ShowOnControlPageList():
-	return True		# if True, then above name/description is shown on the Control Page list index
+	return True
 
 # Optional hook called when the IndigoWebServer first connects to IndigoServer
 def IndigoConnected():
 	pass
 
-# Optional hook called when the IndigoWebServer disconnect from IndigoServer
+# Optional hook called when the IndigoWebServer disconnects from IndigoServer
 def IndigoDisconnected():
 	pass
 
@@ -106,7 +99,7 @@ class hvac_interface:
 		self.bod_gap_fill						= False
 		self.eod_gap_fill						= False
 
-		if show_duplicate_data == "True":
+		if (show_duplicate_data == "True"):
 			self.show_duplicate_data_points		= True
 		else:
 			self.show_duplicate_data_points		= False
@@ -115,14 +108,14 @@ class hvac_interface:
 		self.dbFileName = sql_db_file
 
 	def retrieve_query_from_sqlite(self, query):
-		con = sqlite3.connect(self.dbFileName, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		con = sqlite3.connect(self.dbFileName, detect_types = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
 		con.isolation_level = None
 		cur = con.cursor()
 		cur.execute(query)
 		return cur.fetchall()
 
 	def retrieve_hvac_data_from_sqlite(self, inDate, thermo_name):
-		con = sqlite3.connect(self.dbFileName, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+		con = sqlite3.connect(self.dbFileName, detect_types = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
 		con.isolation_level = None
 		cur = con.cursor()
 
@@ -161,11 +154,11 @@ class hvac_interface:
 		# fetch filter (fan) data
 		cur.execute(u"""select var_name, var_value, datetime(ts, 'localtime') from variable_history where var_name like 'Filter_%' and date(ts, 'localtime') <= date(?) order by ts desc""", (unicode(inDate),))
 		row = cur.fetchone()
-		if row:
+		if (row):
 			self.hvac_mins_filter_total = int(row[1])
 		cur.execute(u"""select var_name, var_value, datetime(ts, 'localtime') from variable_history where var_name like 'Filter_%' and var_value = '0' order by ts desc""")
 		row = cur.fetchone()
-		if row:
+		if (row):
 			self.hvac_date_filter_changed = row[2]
 
 	def retrieve_thermo_names(self, inDate):
@@ -178,7 +171,7 @@ class hvac_interface:
 
 	def return_temperature_readings(self):
 		thermo = []
-		if len(self.hvac_raw_data) == 0:
+		if (len(self.hvac_raw_data) == 0):
 			return thermo
 
 		if (self.bod_gap_fill == True):
@@ -194,9 +187,9 @@ class hvac_interface:
 		for x in self.hvac_raw_data:
 			diff = avg * 0.5
 			if (x[self.hvac_temp] < diff + avg and x[self.hvac_temp] > avg - diff):
-				if self.hvac_temp_min == 0 or x[self.hvac_temp] < self.hvac_temp_min:
+				if (self.hvac_temp_min == 0 or x[self.hvac_temp] < self.hvac_temp_min):
 					self.hvac_temp_min = x[self.hvac_temp]
-				if x[self.hvac_temp] > self.hvac_temp_max:
+				if (x[self.hvac_temp] > self.hvac_temp_max):
 					self.hvac_temp_max = x[self.hvac_temp]
 				self.hvac_temp_avg += x[self.hvac_temp]
 
@@ -211,7 +204,7 @@ class hvac_interface:
 
 	def return_humidity_readings(self):
 		thermo = []
-		if len(self.hvac_raw_data) == 0:
+		if (len(self.hvac_raw_data) == 0):
 			return thermo
 
 		if (self.bod_gap_fill == True):
@@ -227,9 +220,9 @@ class hvac_interface:
 		for x in self.hvac_raw_data:
 			diff = avg * 0.5
 			if (x[self.hvac_humidity] < diff + avg and x[self.hvac_humidity] > avg - diff):
-				if self.hvac_humidity_min == 0 or x[self.hvac_humidity] < self.hvac_humidity_min:
+				if (self.hvac_humidity_min == 0 or x[self.hvac_humidity] < self.hvac_humidity_min):
 					self.hvac_humidity_min = x[self.hvac_humidity]
-				if x[self.hvac_humidity] > self.hvac_humidity_max:
+				if (x[self.hvac_humidity] > self.hvac_humidity_max):
 					self.hvac_humidity_max = x[self.hvac_humidity]
 				self.hvac_humidity_avg += x[self.hvac_humidity]
 
@@ -244,7 +237,7 @@ class hvac_interface:
 
 	def return_setpoint_cooling_readings(self):
 		thermo = []
-		if len(self.hvac_raw_data) == 0:
+		if (len(self.hvac_raw_data) == 0):
 			return thermo
 
 		if (self.bod_gap_fill == True):
@@ -260,9 +253,9 @@ class hvac_interface:
 		for x in self.hvac_raw_data:
 			diff = avg * 0.5
 			if (x[self.hvac_set_cool] < diff + avg and x[self.hvac_set_cool] > avg - diff):
-				if self.hvac_set_cool_min == 0 or x[self.hvac_set_cool] < self.hvac_set_cool_min:
+				if (self.hvac_set_cool_min == 0 or x[self.hvac_set_cool] < self.hvac_set_cool_min):
 					self.hvac_set_cool_min = x[self.hvac_set_cool]
-				if x[self.hvac_set_cool] > self.hvac_set_cool_max:
+				if (x[self.hvac_set_cool] > self.hvac_set_cool_max):
 					self.hvac_set_cool_max = x[self.hvac_set_cool]
 				self.hvac_set_cool_avg += x[self.hvac_set_cool]
 
@@ -277,7 +270,7 @@ class hvac_interface:
 
 	def return_setpoint_heating_readings(self):
 		thermo = []
-		if len(self.hvac_raw_data) == 0:
+		if (len(self.hvac_raw_data) == 0):
 			return thermo
 
 		if (self.bod_gap_fill == True):
@@ -293,9 +286,9 @@ class hvac_interface:
 		for x in self.hvac_raw_data:
 			diff = avg * 0.5
 			if (x[self.hvac_set_heat] < diff + avg and x[self.hvac_set_heat] > avg - diff):
-				if self.hvac_set_heat_min == 0 or x[self.hvac_set_heat] < self.hvac_set_heat_min:
+				if (self.hvac_set_heat_min == 0 or x[self.hvac_set_heat] < self.hvac_set_heat_min):
 					self.hvac_set_heat_min = x[self.hvac_set_heat]
-				if x[self.hvac_set_heat] > self.hvac_set_heat_max:
+				if (x[self.hvac_set_heat] > self.hvac_set_heat_max):
 					self.hvac_set_heat_max = x[self.hvac_set_heat]
 				self.hvac_set_heat_avg += x[self.hvac_set_heat]
 
@@ -310,16 +303,18 @@ class hvac_interface:
 
 	def return_mins_ac_cycle_readings(self):
 		thermo = []
-		if len(self.hvac_mins_ac_raw_data) == 0:
+		if (len(self.hvac_mins_ac_raw_data) == 0):
 			return thermo
 
 		for x in self.hvac_mins_ac_raw_data:
-			if x[0] == "AC_Started":
+			if (x[0] == "AC_Started"):
 				thermo.append([x[self.hvac_mins_ac_ts], 1])
-			elif x[0] == "AC_dailymins":
+			elif (x[0] == "AC_dailymins"):
 				thermo.append([x[self.hvac_mins_ac_ts], 0])
 
-		# default to OFF for first data point if prior day contains no cycle data
+		# default to OFF for first data point if prior day contains no cycle data.
+		# hvac_mins_ac_raw_data is sorted in descending order, which is why we append
+		# the first data point to the end of the array.
 		if (self.bod_gap_fill == True):
 			dt = self.hvac_mins_ac_raw_data[len(self.hvac_mins_ac_raw_data) - 1][self.hvac_mins_ac_ts].split(" ")
 			st = float(dt[1][0:-3].replace(":","."))
@@ -331,16 +326,18 @@ class hvac_interface:
 
 	def return_mins_heat_cycle_readings(self):
 		thermo = []
-		if len(self.hvac_mins_heat_raw_data) == 0:
+		if (len(self.hvac_mins_heat_raw_data) == 0):
 			return thermo
 
 		for x in self.hvac_mins_heat_raw_data:
-			if x[0] == "Heating_Started":
+			if (x[0] == "Heating_Started"):
 				thermo.append([x[self.hvac_mins_heat_ts], 1])
-			elif x[0] == "Heating_dailymins":
+			elif (x[0] == "Heating_dailymins"):
 				thermo.append([x[self.hvac_mins_heat_ts], 0])
 
-		# default to OFF for first data point if prior day contains no cycle data
+		# default to OFF for first data point if prior day contains no cycle data.
+		# hvac_mins_ac_raw_data is sorted in descending order, which is why we append
+		# the first data point to the end of the array.
 		if (self.bod_gap_fill == True):
 			dt = self.hvac_mins_heat_raw_data[len(self.hvac_mins_heat_raw_data) - 1][self.hvac_mins_heat_ts].split(" ")
 			st = float(dt[1][0:-3].replace(":","."))
@@ -352,7 +349,7 @@ class hvac_interface:
 
 	def return_timestrings(self):
 		dates = []
-		if len(self.hvac_raw_data) == 0:
+		if (len(self.hvac_raw_data) == 0):
 			return dates
 
 		if (self.bod_gap_fill == True):
@@ -375,6 +372,7 @@ class hvac_interface:
 		return dates
 
 
+# JSCharts default options for each graph
 def graph_defaults(html):
 	html.append("myChart.setAxisNameColor('#333639');")
 	html.append("myChart.setGridColor('#a4a4a4');")
@@ -389,15 +387,14 @@ def graph_defaults(html):
 	html.append("myChart.setAxisPaddingBottom(38);")
 	html.append("myChart.setTextPaddingBottom(8);")
 	html.append("myChart.setBackgroundImage('images/chart_bg.jpg');")
-	html.append('myChart.setSize(%d, %d);' % (graph_width, graph_height))
+	html.append('myChart.setSize(%d, %d);' % (kGraphWidth, kGraphHeight))
 	html.append('myChart.draw();')
 
 def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.date.today()):
 #	inDate = "2011-11-14"
-	graph_urls = []
 	hvac_data = hvac_sql_interface
 	hvac_data.retrieve_hvac_data_from_sqlite(inDate, thermostat_name)
-	if hvac_data.hvac_raw_data == None:
+	if (hvac_data.hvac_raw_data == None):
 		html.append("No HVAC Data was found")
 		return html
 
@@ -411,34 +408,39 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	html.append('<div id="graph-cool-%s" style="text-align: center;">Loading graph...</div>' % thermostat_name)
 	html.append('<div id="graph-heat-%s" style="text-align: center;">Loading graph...</div>' % thermostat_name)
 
-	# cooling totals/cycles
+	# total cooling time -- find last nonzero value of AC_dailymins
 	mins_ac_total = 0
 	for data in hvac_data.hvac_mins_ac_raw_data:
-		if data[0] == "AC_dailymins" and data[1] != "0":
+		if (data[0] == "AC_dailymins" and data[1] != "0"):
 			mins_ac_total = data[hvac_data.hvac_mins_ac]
 			break
 	mins_ac_data = hvac_data.return_mins_ac_cycle_readings()
+
+	# find number of times compressor cycled
 	mins_ac_cycles = 0
 	y = 0
 	for data in mins_ac_data:
-		if y == 1 and data[1] != y:
+		if (y == 1 and data[1] != y):
 			mins_ac_cycles += 1
 		y = data[1]
 
-	# heating totals/cycles
+	# total heating time -- find last nonzero value of Heating_dailymins
 	mins_heat_total = 0
 	for data in hvac_data.hvac_mins_heat_raw_data:
-		if data[0] == "Heating_dailymins" and data[1] != "0":
+		if (data[0] == "Heating_dailymins" and data[1] != "0"):
 			mins_heat_total = data[hvac_data.hvac_mins_heat]
 			break
 	mins_heat_data = hvac_data.return_mins_heat_cycle_readings()
+
+	# find number of times heater cycled
 	mins_heat_cycles = 0
 	y = 0
 	for data in mins_heat_data:
-		if y == 1 and data[1] != y:
+		if (y == 1 and data[1] != y):
 			mins_heat_cycles += 1
 		y = data[1]
 
+	# compute graph data
 	humidity_matrix, cooling_matrix, heating_matrix, thermo_matrix = [], [], [], []
 	hum_last = csp_last = hsp_last = temp_last = 999, 999, 999, 999
 	t_hum_last = t_csp_last = t_hsp_last = t_temp_last = 999, 999, 999, 999
@@ -490,7 +492,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	html.append('<td>')
 	html.append('<table id="table-temp-%s" style="border-style: outset; border-width: 2px;">' % thermostat_name.replace(" ", ""))
-	html.append('<caption style="color: %s;">Temperature Data</caption>' % graph_color_thermo)
+	html.append('<caption style="color: %s;">Temperature Data</caption>' % kGraphColorThermo)
 	html.append('<thead><tr style="font-size: 12;">')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Set Cool</th>')
@@ -510,7 +512,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	html.append('<td>')
 	html.append('<table id="table-hum-%s" style="border-style: outset; border-width: 2px;">' % thermostat_name.replace(" ", ""))
-	html.append('<caption style="color: %s;">Humidity Data</caption>' % graph_color_humidity)
+	html.append('<caption style="color: %s;">Humidity Data</caption>' % kGraphColorHumidity)
 	html.append('<thead><tr style="font-size: 12;">')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Humidity</th>')
@@ -527,7 +529,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	html.append('<td>')
 	html.append('<table id="table-mins-ac"  style="border-style: outset; border-width: 2px;">')
-	html.append('<caption style="color: %s;">Cooling Cycles</caption>' % graph_color_ac)
+	html.append('<caption style="color: %s;">Cooling Cycles</caption>' % kGraphColorAc)
 	html.append('<thead><tr style="font-size: 12;">')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Mode</th>')
@@ -538,7 +540,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	for clval, data in itertools.izip(clvals, mins_ac_data):
 		x = normalize_timestring(data[0])
 		y = int(data[1])
-		if y == 1:
+		if (y == 1):
 			onoff = "On"
 		else:
 			onoff = "Off"
@@ -554,7 +556,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	html.append('<td>')
 	html.append('<table id="table-mins-heat" style="border-style: outset; border-width: 2px;">')
-	html.append('<caption style="color: %s;">Heating Cycles</caption>' % graph_color_heat)
+	html.append('<caption style="color: %s;">Heating Cycles</caption>' % kGraphColorHeat)
 	html.append('<thead><tr style="font-size: 12;">')
 	html.append('<th scope="col">Time</th>')
 	html.append('<th scope="col">Mode</th>')
@@ -565,7 +567,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	for clval, data in itertools.izip(clvals, mins_heat_data):
 		x = normalize_timestring(data[0])
 		y = int(data[1])
-		if y == 1:
+		if (y == 1):
 			onoff = "On"
 		else:
 			onoff = "Off"
@@ -591,13 +593,13 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	y_max = hvac_data.hvac_humidity_max + 3
 
 	html.append('\nmyChart.setDataArray(%s, "humidity");\n' % humidity_matrix)
-	if mins_ac_total > 0 and len(mins_ac_matrix) != 0:
+	if (mins_ac_total > 0 and len(mins_ac_matrix) != 0):
 		mins_ac_matrix_norm = copy.deepcopy(mins_ac_matrix)
 		for x in mins_ac_matrix_norm:
 			x[1] = y_max + x[1] * 1 - 1
 		html.append('\nmyChart.setDataArray(%s, "ac_cycles");\n' % mins_ac_matrix_norm)
 		del mins_ac_matrix_norm
-	if mins_heat_total > 0 and len(mins_heat_matrix) != 0:
+	if (mins_heat_total > 0 and len(mins_heat_matrix) != 0):
 		mins_heat_matrix_norm = copy.deepcopy(mins_heat_matrix)
 		for x in mins_heat_matrix_norm:
 			x[1] = y_min + x[1] * 1 + 1
@@ -606,26 +608,26 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	for (x, y) in humidity_matrix:
 		html.append('\nmyChart.setTooltip([%f, "Time: %s   Humidity: %s", "humidity"]);\n' % (x, x, y))
-	html.append("myChart.setLineColor('%s', 'humidity');" % (graph_color_humidity))
-	html.append("myChart.setLineWidth(%d, 'humidity');" % (graph_lw_humidity))
-	if mins_ac_total > 0 and len(mins_ac_matrix) != 0:
+	html.append("myChart.setLineColor('%s', 'humidity');" % (kGraphColorHumidity))
+	html.append("myChart.setLineWidth(%d, 'humidity');" % (kGraphLwHumidity))
+	if (mins_ac_total > 0 and len(mins_ac_matrix) != 0):
 		for (x, y) in mins_ac_matrix:
-			if y == 1:
+			if (y == 1):
 				onoff = "ON"
 			else:
 				onoff = "OFF"
 			html.append('\nmyChart.setTooltip([%f, "Time: %s   Cool %s", "ac_cycles"]);\n' % (x, x, onoff))
-		html.append("myChart.setLineColor('%s', 'ac_cycles');" % (graph_color_ac_cycles))
-		html.append("myChart.setLineWidth(%d, 'ac_cycles');" % (graph_lw_ac_cycles))
-	if mins_heat_total > 0 and len(mins_heat_matrix) != 0:
+		html.append("myChart.setLineColor('%s', 'ac_cycles');" % (kGraphColorAcCycles))
+		html.append("myChart.setLineWidth(%d, 'ac_cycles');" % (kGraphLwAcCycles))
+	if (mins_heat_total > 0 and len(mins_heat_matrix) != 0):
 		for (x, y) in mins_heat_matrix:
-			if y == 1:
+			if (y == 1):
 				onoff = "ON"
 			else:
 				onoff = "OFF"
 			html.append('\nmyChart.setTooltip([%f, "Time: %s   Heat %s", "heat_cycles"]);\n' % (x, x, onoff))
-		html.append("myChart.setLineColor('%s', 'heat_cycles');" % (graph_color_heat_cycles))
-		html.append("myChart.setLineWidth(%d, 'heat_cycles');" % (graph_lw_heat_cycles))
+		html.append("myChart.setLineColor('%s', 'heat_cycles');" % (kGraphColorHeatCycles))
+		html.append("myChart.setLineWidth(%d, 'heat_cycles');" % (kGraphLwHeatCycles))
 
 	html.append('myChart.setTitle("%s - Humidity");' % thermostat_name)
 	html.append("myChart.setTitleColor('#67ffca');")
@@ -649,7 +651,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	html.append('\nmyChart.setDataArray(%s, "thermo");\n' % thermo_matrix)
 	html.append('\nmyChart.setDataArray(%s, "ac");\n' % cooling_matrix)
-	if mins_ac_total > 0 and len(mins_ac_matrix) != 0:
+	if (mins_ac_total > 0 and len(mins_ac_matrix) != 0):
 		mins_ac_matrix_norm = copy.deepcopy(mins_ac_matrix)
 		for x in mins_ac_matrix_norm:
 			x[1] = y_max + x[1] * 1 - 1
@@ -658,22 +660,22 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	for (x, y) in thermo_matrix:
 		html.append('\nmyChart.setTooltip([%f, "Time: %s   Room Temp: %s", "thermo"]);\n' % (x, x, y))
-	html.append("myChart.setLineColor('%s', 'thermo');" % (graph_color_thermo))
-	html.append("myChart.setLineWidth(%d, 'thermo');" % (graph_lw_thermo))
+	html.append("myChart.setLineColor('%s', 'thermo');" % (kGraphColorThermo))
+	html.append("myChart.setLineWidth(%d, 'thermo');" % (kGraphLwThermo))
 	for (x, y) in cooling_matrix:
 		html.append('\nmyChart.setTooltip([%f, "Time: %s   Cool Temp: %s", "ac"]);\n' % (x, x, y))
-	html.append("myChart.setLineColor('%s', 'ac');" % (graph_color_ac))
-	html.append("myChart.setLineWidth(%d, 'ac');" % (graph_lw_ac))
+	html.append("myChart.setLineColor('%s', 'ac');" % (kGraphColorAc))
+	html.append("myChart.setLineWidth(%d, 'ac');" % (kGraphLwAc))
 	html.append("myChart.setLineOpacity(1.0, 'ac_cycles');")
-	if mins_ac_total > 0 and len(mins_ac_matrix) != 0:
+	if (mins_ac_total > 0 and len(mins_ac_matrix) != 0):
 		for (x, y) in mins_ac_matrix:
-			if y == 1:
+			if (y == 1):
 				onoff = "ON"
 			else:
 				onoff = "OFF"
 			html.append('\nmyChart.setTooltip([%f, "Time: %s   Cool %s", "ac_cycles"]);\n' % (x, x, onoff))
-		html.append("myChart.setLineColor('%s', 'ac_cycles');" % (graph_color_ac_cycles))
-		html.append("myChart.setLineWidth(%d, 'ac_cycles');" % (graph_lw_ac_cycles))
+		html.append("myChart.setLineColor('%s', 'ac_cycles');" % (kGraphColorAcCycles))
+		html.append("myChart.setLineWidth(%d, 'ac_cycles');" % (kGraphLwAcCycles))
 
 	html.append('myChart.setTitle("%s - Cooling");' % thermostat_name)
 	html.append("myChart.setTitleColor('#10109f');")
@@ -693,7 +695,7 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	html.append('\nmyChart.setDataArray(%s, "thermo");\n' % thermo_matrix)
 	html.append('\nmyChart.setDataArray(%s, "heat");\n' % heating_matrix)
-	if mins_heat_total > 0 and len(mins_heat_matrix) != 0:
+	if (mins_heat_total > 0 and len(mins_heat_matrix) != 0):
 		mins_heat_matrix_norm = copy.deepcopy(mins_heat_matrix)
 		for x in mins_heat_matrix_norm:
 			x[1] = y_max + x[1] * 1 - 1
@@ -702,22 +704,22 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 
 	for (x, y) in thermo_matrix:
 		html.append('\nmyChart.setTooltip([%f, "Time: %s   Room Temp: %s", "thermo"]);\n' % (x, x, y))
-	html.append("myChart.setLineColor('%s', 'thermo');" % (graph_color_thermo))
-	html.append("myChart.setLineWidth(%d, 'thermo');" % (graph_lw_thermo))
+	html.append("myChart.setLineColor('%s', 'thermo');" % (kGraphColorThermo))
+	html.append("myChart.setLineWidth(%d, 'thermo');" % (kGraphLwThermo))
 	for (x, y) in heating_matrix:
 		html.append('\nmyChart.setTooltip([%f, "Time: %s   Heat Temp: %s", "heat"]);\n' % (x, x, y))
-	html.append("myChart.setLineColor('%s', 'heat');" % (graph_color_heat))
-	html.append("myChart.setLineWidth(%d, 'heat');" % (graph_lw_heat))
+	html.append("myChart.setLineColor('%s', 'heat');" % (kGraphColorHeat))
+	html.append("myChart.setLineWidth(%d, 'heat');" % (kGraphLwHeat))
 	html.append("myChart.setLineOpacity(1.0, 'heat_cycles');")
-	if mins_heat_total > 0 and len(mins_heat_matrix) != 0:
+	if (mins_heat_total > 0 and len(mins_heat_matrix) != 0):
 		for (x, y) in mins_heat_matrix:
-			if y == 1:
+			if (y == 1):
 				onoff = "ON"
 			else:
 				onoff = "OFF"
 			html.append('\nmyChart.setTooltip([%f, "Time: %s   Heat %s", "heat_cycles"]);\n' % (x, x, onoff))
-		html.append("myChart.setLineColor('%s', 'heat_cycles');" % (graph_color_heat_cycles))
-		html.append("myChart.setLineWidth(%d, 'heat_cycles');" % (graph_lw_heat_cycles))
+		html.append("myChart.setLineColor('%s', 'heat_cycles');" % (kGraphColorHeatCycles))
+		html.append("myChart.setLineWidth(%d, 'heat_cycles');" % (kGraphLwHeatCycles))
 
 	html.append('myChart.setTitle("%s - Heating");' % thermostat_name)
 	html.append("myChart.setTitleColor('#9f1010');")
@@ -782,7 +784,7 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 		html_elems.append('<option>Yesterday')
 		dates.sort(reverse=True)
 		for day in dates:
-			if selected_date == day:
+			if (selected_date == day):
 				html_elems.append('<option selected>%s' % day)
 			else:
 				html_elems.append('<option>%s' % day)
@@ -790,7 +792,7 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 		html_elems.append('</td>')
 		html_elems.append('<td>')
 		html_elems.append('<input type="checkbox" name="show_duplicate_data" value="True" ')
-		if show_duplicate_data == "True":
+		if (show_duplicate_data == "True"):
 			html_elems.append('checked="checked" ')
 		html_elems.append('/>Show duplicate data points')
 		html_elems.append('</td>')
@@ -811,18 +813,18 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 		html_elems = []
 		try:
 			config = ConfigParser.ConfigParser()
-			config.read(kSqlConfigFile)
+			config.read(os.path.join(kSqlConfigPath, kSqlConfigFile))
 			dbType = config.get("client_options", "database_type").lower()
-			if dbType == "sqlite":
+			if (dbType == "sqlite"):
 				dbFileName = config.get("sqlite_client", "database")
 				if (len(dbFileName) < 1):
 					return "The database file is missing in the SQL logging client so nothing is being logged."
 				else:
-					dbFileName = "/Library/Application Support/Perceptive Automation/Indigo 4/IndigoSqlClient/" + dbFileName
+					dbFileName = os.path.join(kSqlConfigPath, dbFileName)
 				deviceChanges = config.get("client_options", "log_device_changes")
 				if (deviceChanges == "0"):
 					return "Device logging is disabled - you need to configure the SQL logging client to log all device changes."
-			elif dbType == "postgres":
+			elif (dbType == "postgres"):
 				return "This plugin can only use SQLite databases, not PostgreSQL databases."
 		except Exception, e:
 			return "The plugin can't read the config file for the SQL logging client."
