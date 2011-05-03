@@ -404,10 +404,6 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	setpoint_heating_data = hvac_data.return_setpoint_heating_readings()
 	time_data = hvac_data.return_timestrings()
 
-	html.append('\n<div id="graph-humidity-%s" style="text-align: center;">Loading graph...</div>\n' % thermostat_name)
-	html.append('<div id="graph-cool-%s" style="text-align: center;">Loading graph...</div>\n' % thermostat_name)
-	html.append('<div id="graph-heat-%s" style="text-align: center;">Loading graph...</div>\n\n' % thermostat_name)
-
 	# total cooling time -- find last nonzero value of AC_dailymins
 	mins_ac_total = 0
 	for data in hvac_data.hvac_mins_ac_raw_data:
@@ -485,6 +481,10 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	html.append('</div>\n')
 	html.append('<hr>\n\n')
 	# Summary -- END
+
+	html.append('\n<div id="graph-humidity-%s" style="text-align: center;">Loading graph...</div>\n' % thermostat_name)
+	html.append('<div id="graph-cool-%s" style="text-align: center;">Loading graph...</div>\n' % thermostat_name)
+	html.append('<div id="graph-heat-%s" style="text-align: center;">Loading graph...</div>\n\n' % thermostat_name)
 
 	# Raw data -- BEGIN
 	html.append('<table id="rawdata-%s">\n' % (thermostat_name.replace(" ", "")))
