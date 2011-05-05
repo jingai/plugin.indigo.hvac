@@ -1,7 +1,11 @@
-* use dygraphs instead of jscharts
 * add comments to the code
 * infer compressor/heat stage from temperature/setpoint differential
+- show totals for each stage in HTML output
+* fetch and store outdoor temp on state changes
+- plot the outdoor temps as well
 * infer dehumidify cycle temperature and humidity readings
+* sometimes see an Off command right after an On command
 * calculate electricity costs
 - send emails at user-specified intervals
 * add date-range selector
+* use dygraphs instead of jscharts?
