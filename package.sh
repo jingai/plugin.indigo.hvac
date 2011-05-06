@@ -12,11 +12,11 @@ VER=`cat __init__.py | grep -e '^__version__' | cut -d \' -f 2`
 
 PLUGIN_NAME="hvac-plot"
 PLUGIN_ARCHIVE="$PLUGIN_NAME-$VER.tgz"
-PLUGIN_FILES="LICENSE ChangeLog __init__.py __init__.pyc reqhandler.py reqhandler.pyc css images js"
+PLUGIN_FILES="README LICENSE ChangeLog __init__.py __init__.pyc reqhandler.py reqhandler.pyc css images js"
 
 SCRIPT_NAME="hvac-track"
 SCRIPT_ARCHIVE="$SCRIPT_NAME-$VER.tgz"
-SCRIPT_FILES="attachments/"
+SCRIPT_FILES="LICENSE attachments/"
 
 cd `dirname "$0"`
 

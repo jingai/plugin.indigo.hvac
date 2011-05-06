@@ -1,0 +1,70 @@
+DESCRIPTION
+===========
+HVAC tracking attachments for Indigo Pro.  These attachments are known to be
+compatible with the Venstar T1X00 thermostats with the INSTEON module.
+
+When installed, these attachments will track the usage of the A/C, furnace,
+and fan.  Log messages like these will be generated on state changes:
+
+  Received INSTEON	"Thermostat" off (button 1)
+  Thermostat		Insteon Thermostat Event being processed
+  Thermostat		Requesting AC - Off
+  Thermostat		AC Ran for 14 minutes
+  Thermostat		Filter usage: 14 minutes
+  Thermostat		Insteon Thermostat Event processing complete
+
+The tracking attachment will monitor the thermostat for Button 1 (A/C),
+Button 2 (Heat), and Button 3 (Fan) ON or OFF events.  It will create the
+variables AC_dailymins, Heating_dailymins, and Filter_totalmins to to track
+usage for the A/C, heating, and the filter, respectively.
+
+These variables each represent the number of minutes each component was used
+since the last variable reset, which is currently assumed will happen daily
+via the thermo_dayend and thermo_daystart scripts.
+
+Filter_totalmins is essentially a cumulative total of the number of minutes
+all components ran since the last time it was reset to 0, which you should do
+whenever you change your filter.  The script will not do anything to alert
+you when it's time to change your filter, but you can create a Trigger in
+Indigo to monitor the variable and send you an email, etc whenever the value
+exceeds your threshold.
+
+Some other variables are also created:
+
+  Last_Furnace_State_Change	The time of the last state change for any of
+				the components in your system
+  AC_Started			The time of the last request for cooling
+  AC_status			Current status of the A/C (On or Off)
+  Fan_Started			The time of the last _manual_ request for
+				continuous fan operation*
+  Fan_status			Off = Automatic fan operation
+				On  = Continuous fan operation
+  Heating_Started		The time of the last request for heating
+  Heating_status		Current status of the heater (On or Off)
+
+*Fan_Started is only updated when you physically press the fan button on your
+thermostat.  Unfortunately, as of v2.0 of the Venstar INSTEON adapter, it
+does not automatically communicate fan state changes on requests for cooling
+or heating.
+
+These scripts are ultimately designed to work with the companion Indigo Web
+Server plugin to visualize the data in your web browser.  However, if you
+just want to log the state changes and daily usages, you can use these
+attachments independently of the web server plugin.
+
+INSTALLATION
+============
+1) Copy all of the .scpt files to:
+/Library/Application Support/Perceptive Automation/Indigo 4/Scripts/Attachments
+
+2) Create a Time/Date Action, with the action of "Run Applescript", and
+   choose "thermo_dayend".  Set it to run at 23:59 every day.
+
+3) Create a Time/Date Action, with the action of "Run Applescript", and
+   choose "thermo_daystart".  Set it to run at 00:00 every day.
+
+If you want to be able to plot graphs of the data, you will also need to turn
+on "Log Device State History to SQLite" in the Indigo Server.  Please note
+that this, and consequently the web server plugin, require Indigo Pro.
+
+Restart the Indigo Server for changes to take effect.

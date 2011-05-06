@@ -1,0 +1,51 @@
+DESCRIPTION
+===========
+This Indigo Pro Web Server plugin will display the historical thermostat
+usage for the Venstar T1X00 series of thermostats via some nice, easy-to-read
+graphs in your web browser.
+
+Currently, the plugin will show you three graphs:
+
+1) Humidity.  On this graph, it also shows the heating and cooling cycles to
+   make it easy to discern what caused the shifts in humidity.  Note that
+   this graph requires the humidity module in your thermostat.  If you have
+   a T1900, this comes standard.  With the T1800, it's an optional purchase.
+   It is not available at all for the T1700.
+
+2) Cooling.  Plots the actual temperature read at the thermostat versus the
+   desired cooling set points.  Also shown on the top of this graph are
+   the compressor cycles.
+
+3) Heating.  Plots the actual temperature read at the thermostat versus the
+   desired heating set points.  Also shown on the top of this graph are
+   the compressor cycles.
+
+Both the Heating and Cooling graphs are shown at the same scale to make it
+easier to eyeball what went on for that day.
+
+At the top of the page is displayed a text summary of totals, including the
+number of minutes the A/C and heater ran, number of compressor/heater cycles,
+number of minutes on the current filter, and read temperature and humidity
+minimums, maximums, and averages.
+
+At the bottom all of the raw data is shown in tabular form.
+
+REQUIREMENTS
+============
+You must have installed the companion attachment scripts that track the
+thermostat usage.  In addition, you must have enabled SQLite Logging in
+Indigo, which means you need Indigo Pro.
+
+Indigo Pro 4.x has been tested and it may or may not work with earlier or
+later versions, but I provide no guarantee that it will.
+
+LIMITATIONS
+===========
+Currently, only one thermostat is supported.
+
+INSTALLATION
+============
+1) Copy the "hvac-plot" folder to:
+/Library/Application Support/Perceptive Automation/Indigo 4/IndigoWebServer/Plugins
+
+2) Restart the Indigo Server.
