@@ -1,4 +1,4 @@
-#!python
+#! /usr/bin/python
 
 import os
 import datetime
@@ -856,4 +856,4 @@ class HaloHomeRequestHandler(BaseRequestHandler):
 
 	index.exposed = True
 
-# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
+# vim: tabstop=4 softtabstop=4 shiftwidth=4 noexpandtab:
