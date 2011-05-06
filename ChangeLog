@@ -41,3 +41,8 @@
 	* Fix beginning-of-day gap fill
 	* More legible HTML for small devices (e.g. iPhone)
 
+2.2.5  2011-05-05  Jonathan Lane <jingai@floatingpenguins.com>
+
+	* Fix filter tracking
+	* Move summary to the top
+
