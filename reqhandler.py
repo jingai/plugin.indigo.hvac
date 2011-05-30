@@ -752,13 +752,13 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 # requested. This provides a mechanism for easily serving dynamic content.
 #
 # The URL path is based on the folder path of the plugin. For example,
-# this plugin folder name is "sample" so any URL path containing "sample"
+# this plugin folder name is "hvac-plot" so any URL path containing "hvac-plot"
 # as the first path identifier will call into these functions.
 #
 # The class name can be called whatever you want, but it must subclass
 # from BaseRequestHandler to be loaded by the webserver plugin manager.
 #
-class HaloHomeRequestHandler(BaseRequestHandler):
+class ThermRequestHandler(BaseRequestHandler):
 	# The plugin page request handler must subclass from BaseRequestHandler
 	# and must call the parent class __init__ method.
 	#
