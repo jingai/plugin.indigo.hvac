@@ -46,3 +46,8 @@
 	* Fix filter tracking
 	* Move summary to the top
 
+3.0.0  2011-05-29  Jonathan Lane <jingai@floatingpenguins.com>
+
+	* Update jscharts to 2.0.8
+	* Initial support for Indigo 5
+
