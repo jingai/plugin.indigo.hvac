@@ -7,7 +7,7 @@ fail() {
 
 cd `dirname "$0"`
 
-IWS_DIR="/Library/Application Support/Perceptive Automation/Indigo 4/IndigoWebServer/"
+IWS_DIR="/Library/Application Support/Perceptive Automation/Indigo 5/IndigoWebServer/"
 SCRIPT_DIR="$IWS_DIR/../Scripts/Attachments"
 
 PY_FILES="__init__.py reqhandler.py"

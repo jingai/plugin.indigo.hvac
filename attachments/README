@@ -55,7 +55,7 @@ attachments independently of the web server plugin.
 INSTALLATION
 ============
 1) Copy all of the .scpt files to:
-/Library/Application Support/Perceptive Automation/Indigo 4/Scripts/Attachments
+/Library/Application Support/Perceptive Automation/Indigo 5/Scripts/Attachments
 
 2) Create a Time/Date Action, with the action of "Run Applescript", and
    choose "thermo_dayend".  Set it to run at 23:59 every day.

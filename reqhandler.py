@@ -13,7 +13,7 @@ from indigopy import indigoconn as ic
 from indigopy import indigodb as idb
 from indigopy.basereqhandler import BaseRequestHandler, kTrueStr, kFalseStr, kEmptyStr, kTextPageStr, kHtmlPageStr, kXmlPageStr
 
-kSqlConfigPath = "/Library/Application Support/Perceptive Automation/Indigo 4/IndigoSqlClient"
+kSqlConfigPath = "/Library/Application Support/Perceptive Automation/Indigo 5/IndigoSqlClient"
 kSqlConfigFile = "IndigoSqlClient.conf"
 
 kGraphWidth				= 1016			# pixels
