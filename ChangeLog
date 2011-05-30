@@ -46,3 +46,7 @@
 	* Fix filter tracking
 	* Move summary to the top
 
+2.2.6  2011-05-29  Jonathan Lane <jingai@floatingpenguins.com>
+
+	* Update jscharts to 2.0.8
+
