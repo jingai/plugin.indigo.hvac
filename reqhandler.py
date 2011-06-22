@@ -140,7 +140,7 @@ class hvac_interface:
 		eod = float(self.hvac_raw_data[len(self.hvac_raw_data) - 1][self.hvac_ts].split(" ")[1][0:-3].replace(":","."))
 		if (bod > 0.0):
 			self.bod_gap_fill = True
-		if (eod < 23.55 and inDate != datetime.date.today().isoformat()):
+		if (eod < 23.99 and inDate != datetime.date.today().isoformat()):
 			self.eod_gap_fill = True
 
 		# fetch cooling data
@@ -359,7 +359,7 @@ class hvac_interface:
 			dates.append(normalize_timestring(x[self.hvac_ts]))
 
 		if (self.eod_gap_fill == True):
-			dates.append(23.59)
+			dates.append(23.99)
 
 		return dates
 
