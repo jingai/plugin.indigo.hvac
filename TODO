@@ -2,6 +2,5 @@
 - show totals for each stage in HTML output in the summary section
 * fetch (from what site?) and store outdoor temp on state changes
 - plot the outdoor temps as well (separate graph?)
-* sometimes see an Off command right after an On command
 * need a way to summarize data over a range of dates (weekly, monthly, etc)
 * use dygraphs instead of jscharts?
