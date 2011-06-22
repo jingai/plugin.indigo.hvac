@@ -306,19 +306,25 @@ class hvac_interface:
 		if (len(self.hvac_mins_ac_raw_data) == 0):
 			return thermo
 
-		for x in self.hvac_mins_ac_raw_data:
-			if (x[0] == "AC_Started"):
-				thermo.append([x[self.hvac_mins_ac_ts], 1])
-			elif (x[0] == "AC_dailymins"):
-				thermo.append([x[self.hvac_mins_ac_ts], 0])
+		y_last = 999
+		for data in self.hvac_mins_ac_raw_data:
+			if (data[0] == "AC_Started"):
+				y = 1
+			elif (data[0] == "AC_dailymins"):
+				y = 0
+			else:
+				continue
+			if (y != y_last or self.show_duplicate_data_points == True):
+				thermo.append([data[self.hvac_mins_ac_ts], y])
+			y_last = y
 
-		# default to OFF for first data point if prior day contains no cycle data.
+		# default to OFF for first data point if cycle data doesn't start at midnight.
 		# hvac_mins_ac_raw_data is sorted in descending order, which is why we append
 		# the first data point to the end of the array.
 		if (self.bod_gap_fill == True):
 			dt = self.hvac_mins_ac_raw_data[len(self.hvac_mins_ac_raw_data) - 1][self.hvac_mins_ac_ts].split(" ")
 			st = float(dt[1][0:-3].replace(":","."))
-			if (st > 0.0):
+			if (st > 0.1):
 				dt[1] = "00:00:00"
 				thermo.append([' '.join(dt), 0])
 
@@ -329,19 +335,25 @@ class hvac_interface:
 		if (len(self.hvac_mins_heat_raw_data) == 0):
 			return thermo
 
-		for x in self.hvac_mins_heat_raw_data:
-			if (x[0] == "Heating_Started"):
-				thermo.append([x[self.hvac_mins_heat_ts], 1])
-			elif (x[0] == "Heating_dailymins"):
-				thermo.append([x[self.hvac_mins_heat_ts], 0])
+		y_last = 999
+		for data in self.hvac_mins_heat_raw_data:
+			if (data[0] == "Heating_Started"):
+				y = 1
+			elif (data[0] == "Heating_dailymins"):
+				y = 0
+			else:
+				continue
+			if (y != y_last or self.show_duplicate_data_points == True):
+				thermo.append([data[self.hvac_mins_heat_ts], y])
+			y_last = y
 
-		# default to OFF for first data point if prior day contains no cycle data.
-		# hvac_mins_ac_raw_data is sorted in descending order, which is why we append
+		# default to OFF for first data point if cycle data doesn't start at midnight.
+		# hvac_mins_heat_raw_data is sorted in descending order, which is why we append
 		# the first data point to the end of the array.
 		if (self.bod_gap_fill == True):
 			dt = self.hvac_mins_heat_raw_data[len(self.hvac_mins_heat_raw_data) - 1][self.hvac_mins_heat_ts].split(" ")
 			st = float(dt[1][0:-3].replace(":","."))
-			if (st > 0.0):
+			if (st > 0.1):
 				dt[1] = "00:00:00"
 				thermo.append([' '.join(dt), 0])
 
@@ -413,11 +425,11 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	mins_ac_data = hvac_data.return_mins_ac_cycle_readings()
 
 	# find number of times compressor cycled
-	mins_ac_cycles = 0
+	ac_cycles = 0
 	y = 0
 	for data in mins_ac_data:
 		if (y == 1 and data[1] != y):
-			mins_ac_cycles += 1
+			ac_cycles += 1
 		y = data[1]
 
 	# total heating time -- find last nonzero value of Heating_dailymins
@@ -429,11 +441,11 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	mins_heat_data = hvac_data.return_mins_heat_cycle_readings()
 
 	# find number of times heater cycled
-	mins_heat_cycles = 0
+	heat_cycles = 0
 	y = 0
 	for data in mins_heat_data:
 		if (y == 1 and data[1] != y):
-			mins_heat_cycles += 1
+			heat_cycles += 1
 		y = data[1]
 
 	# compute graph data
@@ -470,8 +482,8 @@ def create_graphs(html, hvac_sql_interface, thermostat_name, inDate = datetime.d
 	# Summary -- BEGIN
 	html.append('<hr>\n')
 	html.append('<div id="summary" style="text-align: center;">\n')
-	html.append('Cooling totals: %s mins, %s cycles' % (mins_ac_total, mins_ac_cycles))
-	html.append(' &mdash; Heating totals: %s mins, %s cycles' % (mins_heat_total, mins_heat_cycles))
+	html.append('Cooling totals: %s mins, %s cycles' % (mins_ac_total, ac_cycles))
+	html.append(' &mdash; Heating totals: %s mins, %s cycles' % (mins_heat_total, heat_cycles))
 	html.append('<br>\n')
 	html.append('Filter runtime to date: %s hours (%s mins)' % (hvac_data.hvac_mins_filter_total / 60, hvac_data.hvac_mins_filter_total))
 	html.append(' &mdash; Last changed: %s' % (hvac_data.hvac_date_filter_changed))
