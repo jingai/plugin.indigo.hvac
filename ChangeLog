@@ -50,3 +50,9 @@
 
 	* Update jscharts to 2.0.8
 
+2.3.0  2011-06-22  Jonathan Lane <jingai@floatingpenguins.com>
+
+	* Fix end-of-day gap fill on plots
+	* Omit duplicate cycle data from plots
+	* Update Filter_totalmins at end of each day
+
