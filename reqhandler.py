@@ -152,7 +152,7 @@ class hvac_interface:
 		self.hvac_mins_heat_raw_data = cur.fetchall()
 
 		# fetch filter (fan) data
-		cur.execute(u"""select var_name, var_value, datetime(ts, 'localtime') from variable_history where var_name like 'Filter_%' and date(ts, 'localtime') <= date(?) order by ts desc""", (unicode(inDate),))
+		cur.execute(u"""select var_name, var_value, datetime(ts, 'localtime') from variable_history where var_name like 'Filter_%' and date(ts, 'localtime') <= date(?) order by ts desc limit 1""", (unicode(inDate),))
 		row = cur.fetchone()
 		if (row):
 			self.hvac_mins_filter_total = int(row[1])
