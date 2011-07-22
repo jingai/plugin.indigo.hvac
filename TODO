@@ -1,6 +1,10 @@
-* infer compressor/heat stage from temperature/setpoint differential
+* infer dehumidify/compressor/heat stage from temperature/setpoint differential
 - show totals for each stage in HTML output in the summary section
 * fetch (from what site?) and store outdoor temp on state changes
 - plot the outdoor temps as well (separate graph?)
 * need a way to summarize data over a range of dates (weekly, monthly, etc)
 * use dygraphs instead of jscharts?
+- stepPlot for compressor cycles/staging
+* it's possible we can miss events if Indigo isn't running when the thermostat
+  changes modes.  not sure how to best handle this besides querying the device
+  directly in the tracking scripts.
