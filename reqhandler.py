@@ -307,16 +307,20 @@ class hvac_interface:
 			return thermo
 
 		y_last = 999
-		for data in self.hvac_mins_ac_raw_data:
+		# walk the array in reverse because dehumidification cycle (without
+		# call for cooling) gives us a bunch of AC On commands in a row
+		# to indicate this, but we want the first one, not the last one.
+		for data in reversed(self.hvac_mins_ac_raw_data):
 			if (data[0] == "AC_Started"):
 				y = 1
-			elif (data[0] == "AC_dailymins"):
+			elif (data[0] == "AC_dailymins" and data[1] != "0"):
 				y = 0
 			else:
 				continue
 			if (y != y_last or self.show_duplicate_data_points == True):
 				thermo.append([data[self.hvac_mins_ac_ts], y])
 			y_last = y
+		thermo.reverse()
 
 		# default to OFF for first data point if cycle data doesn't start at midnight.
 		# hvac_mins_ac_raw_data is sorted in descending order, which is why we append
