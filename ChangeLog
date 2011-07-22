@@ -53,7 +53,12 @@
 
 3.1.0  2011-06-22  Jonathan Lane <jingai@floatingpenguins.com>
 
-        * Fix end-of-day gap fill on plots
+	* Fix end-of-day gap fill on plots
 	* Omit duplicate cycle data from plots
 	* Update Filter_totalmins at end of each day
+
+3.2.0  2011-07-22  Jonathan Lane <jingai@floatingpenguins.com>
+
+	* Update Filter_totalmins correctly if fan is set to continuous
+	* Display dehumidfication cycle as a cooling cycle
 
