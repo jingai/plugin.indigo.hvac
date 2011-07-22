@@ -27,7 +27,8 @@ all components ran since the last time it was reset to 0, which you should do
 whenever you change your filter.  The script will not do anything to alert
 you when it's time to change your filter, but you can create a Trigger in
 Indigo to monitor the variable and send you an email, etc whenever the value
-exceeds your threshold.
+exceeds your threshold.  Filter_totalmins is updated whenever the scripts
+see a call for cooling/heating/fan off, as well as at the end of each day.
 
 Some other variables are also created:
 
